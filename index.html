@@ -4,10 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ziran Logística</title>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script type="module">
+/* Firebase (SDK modular) com uma camada de compatibilidade usada pelo sistema.
+   Permite escolher o banco do Firestore pelo nome (FIRESTORE_DATABASE em firebase-config.js). */
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,signOut,updateProfile} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {getFirestore,collection,doc,onSnapshot,setDoc,updateDoc,writeBatch,query,orderBy,limit} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const wrapUser=u=>{if(u&&!u.updateProfile)u.updateProfile=x=>updateProfile(u,x);return u;};
+const authOf=app=>{const a=getAuth(app);return {
+  set languageCode(v){a.languageCode=v;},get languageCode(){return a.languageCode;},
+  onAuthStateChanged:cb=>onAuthStateChanged(a,u=>cb(wrapUser(u))),
+  signInWithEmailAndPassword:(e,p)=>signInWithEmailAndPassword(a,e,p).then(c=>(wrapUser(c.user),c)),
+  createUserWithEmailAndPassword:(e,p)=>createUserWithEmailAndPassword(a,e,p).then(c=>(wrapUser(c.user),c)),
+  sendPasswordResetEmail:e=>sendPasswordResetEmail(a,e),signOut:()=>signOut(a)};};
+const qsnap=s=>s;
+const Q=q=>({orderBy:(f,d)=>Q(query(q,orderBy(f,d))),limit:n=>Q(query(q,limit(n))),onSnapshot:(cb,err)=>onSnapshot(q,s=>cb(qsnap(s)),err)});
+const D=r=>({_r:r,id:r.id,onSnapshot:(cb,err)=>onSnapshot(r,s=>cb({exists:s.exists(),id:s.id,data:()=>s.data()}),err),set:d=>setDoc(r,d),update:d=>updateDoc(r,d)});
+let fs=null;
+const dbw={collection:c=>{const cr=collection(fs,c);return Object.assign(Q(cr),{doc:id=>D(doc(fs,c,id))});},
+  batch:()=>{const b=writeBatch(fs);return {set:(r,d)=>b.set(r._r,d),delete:r=>b.delete(r._r),commit:()=>b.commit()};}};
+const apps=[];
+window.firebase={apps,
+  initializeApp(cfg,name){const app=initializeApp(cfg,name);const w={name:app.name,auth:()=>authOf(app),_app:app};apps.push(w);
+    if(!name)fs=getFirestore(app,(window.FIRESTORE_DATABASE||'(default)'));return w;},
+  auth:()=>authOf(apps.find(a=>a.name==='[DEFAULT]')._app),
+  firestore:()=>dbw};
+window.__fbReady=true;window.dispatchEvent(new Event('fb-ready'));
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gantari:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1043,7 +1067,7 @@ const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const strip=o=>JSON.stringify(o,(k,v)=>(k==='_by'||k==='_at')?undefined:v);
 const clean=o=>JSON.parse(JSON.stringify(o));
 let db=null,auth=null;
-try{if(window.firebase&&window.FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/COLE/i.test(FIREBASE_CONFIG.apiKey)){firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();auth.languageCode='pt';db=firebase.firestore();}}catch(e){console.error(e);}
+function fbInit(){try{if(window.firebase&&window.FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/COLE/i.test(FIREBASE_CONFIG.apiKey)){firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();auth.languageCode='pt';db=firebase.firestore();}}catch(e){console.error(e);}}
 function fbErr(e){console.error(e);if(e&&e.code==='permission-denied')toast('Sem permissão para acessar estes dados. Confira se o usuário está ativo e se as regras do Firestore foram publicadas.');else toast('Erro de conexão com o banco: '+(e&&e.message||e));}
 function setSync(t){const el=$('#sync');if(el)el.textContent=t||(navigator.onLine?'Sincronizado':'Sem internet: alterações serão enviadas quando voltar');}
 window.addEventListener('online',()=>setSync());window.addEventListener('offline',()=>setSync());
@@ -1111,9 +1135,10 @@ function enterApp(){
   db.collection('users').doc(USER.uid).update({ultimoAcesso:iso(now())}).catch(()=>{});
 }
 function leaveApp(){stopListen();inApp=false;closeAll();S=EMPTY();known={};knownMeta={};usersList=[];}
-if(!auth){showAuth('config');}
-else{showAuth('loading');}
-if(auth)auth.onAuthStateChanged(u=>{
+function fbBoot(){fbInit();
+if(!auth){showAuth('config');return;}
+showAuth('loading');
+auth.onAuthStateChanged(u=>{
   if(unsubMe){unsubMe();unsubMe=null;}leaveApp();USER=u;ME=null;
   if(!u){showAuth('login');return;}
   showAuth('loading');
@@ -1125,6 +1150,10 @@ if(auth)auth.onAuthStateChanged(u=>{
     else{leaveApp();showAuth(d.status==='inativo'?'inativo':'pendente');}
   },e=>showAuth('erro',e.code==='permission-denied'?'Sem permissão para ler o seu cadastro. Confira as regras do Firestore (passo 6 do guia).':e.message));
 });
+}
+if(window.__fbReady)fbBoot();
+else{showAuth('loading');window.addEventListener('fb-ready',fbBoot,{once:true});
+  setTimeout(()=>{if(!window.__fbReady)showAuth('erro','Não foi possível carregar o Firebase. Confira a internet e recarregue a página (F5).');},20000);}
 $('#logout').addEventListener('click',()=>auth&&auth.signOut());
 
 /* ============ USUÁRIOS (admin) ============ */
