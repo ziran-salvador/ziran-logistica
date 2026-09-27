@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ziran Logística</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gantari:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#F1F1F1;--surface:#FFFFFF;--surface2:#F7F7F7;--line:#DADBDB;--line2:#E8E8E8;
+  --text:#141414;--muted:#5D5F60;--nav:#141414;--navText:#B1B3B3;--navHi:#FFFFFF;--navLine:#2A2A2A;
+  --accent:#D6001C;--accentText:#FFFFFF;--accentSoft:#FCE4E7;--ink:#262626;--inkSoft:#E9E9EA;--steel:#B1B3B3;
+  --ok:#1F7A48;--okSoft:#DFF0E6;--warn:#A5620A;--warnSoft:#FBEEDB;--crit:#B5001A;--critSoft:#FBE1E4;
+  --info:#2D5F9A;--infoSoft:#E2EAF4;--idle:#6A6C6D;--idleSoft:#ECECEC;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --f-ui:"Gantari",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --f-disp:"Gantari",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;--bg:#101011;--surface:#1A1B1C;--surface2:#212224;--line:#323436;--line2:#2A2B2D;
+  --text:#ECECEC;--muted:#A3A5A6;--nav:#0A0A0A;--navText:#A3A5A6;--navHi:#FFFFFF;--navLine:#222;
+  --accent:#F0283F;--accentText:#FFFFFF;--accentSoft:#3B1318;--ink:#E4E4E4;--inkSoft:#2C2D2F;--steel:#8C8E8E;
+  --ok:#4BBE80;--okSoft:#12301F;--warn:#E3A844;--warnSoft:#362810;--crit:#FF6B78;--critSoft:#3F161B;
+  --info:#7FA9DE;--infoSoft:#172638;--idle:#9A9C9D;--idleSoft:#262729;--shadow:0 1px 2px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;--bg:#101011;--surface:#1A1B1C;--surface2:#212224;--line:#323436;--line2:#2A2B2D;
+  --text:#ECECEC;--muted:#A3A5A6;--nav:#0A0A0A;--navText:#A3A5A6;--navHi:#FFFFFF;--navLine:#222;
+  --accent:#F0283F;--accentText:#FFFFFF;--accentSoft:#3B1318;--ink:#E4E4E4;--inkSoft:#2C2D2F;--steel:#8C8E8E;
+  --ok:#4BBE80;--okSoft:#12301F;--warn:#E3A844;--warnSoft:#362810;--crit:#FF6B78;--critSoft:#3F161B;
+  --info:#7FA9DE;--infoSoft:#172638;--idle:#9A9C9D;--idleSoft:#262729;--shadow:0 1px 2px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--f-ui);margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono{font-family:var(--f-mono);font-size:.93em;letter-spacing:.01em}
+.num{font-variant-numeric:tabular-nums}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+/* sidebar */
+.side{background:var(--nav);color:var(--navText);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding-block:18px 14px}
+.brand{padding:0 20px 18px;border-bottom:1px solid var(--navLine)}
+.brand{display:flex;flex-direction:column;gap:8px}
+.brand img{display:block;width:176px;max-width:100%;height:auto}
+.brand span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel)}
+.nav{display:flex;flex-direction:column;gap:2px;padding:12px 10px;flex:1;overflow:auto}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-radius:6px;color:var(--navText);text-decoration:none;font-weight:500}
+.nav a:hover{background:rgba(255,255,255,.06);color:var(--navHi)}
+.nav a.on{background:rgba(255,255,255,.08);color:var(--navHi);box-shadow:inset 3px 0 0 var(--accent)}
+.nav .grp{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;padding:14px 12px 4px}
+.badge{min-width:20px;padding:1px 6px;border-radius:10px;background:var(--accent);color:#fff;font-size:11px;font-weight:600;text-align:center}
+.side-foot{padding:10px 20px 0;border-top:1px solid var(--navLine);font-size:12px;display:flex;flex-direction:column;gap:8px}
+.side-foot button{background:transparent;border:1px solid var(--navLine);color:var(--navText);border-radius:6px;padding:6px 10px;cursor:pointer;text-align:left}
+.side-foot button:hover{color:var(--navHi);border-color:var(--navText)}
+/* main */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:3px solid var(--accent);display:flex;align-items:center;gap:14px;padding:10px 24px;flex-wrap:wrap}
+.top h1{font-family:var(--f-disp);font-weight:800;font-size:23px;letter-spacing:-.01em;margin:0;flex:1;min-width:180px;text-wrap:balance}
+.search{display:flex;gap:6px;flex:0 1 340px;min-width:200px}
+.search input{flex:1;min-width:0}
+.clock{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.demo{background:var(--surface2);color:var(--muted);font-size:12px;padding:6px 24px;border-bottom:1px solid var(--line)}
+.view{padding-block:20px 40px;padding-inline:24px;display:flex;flex-direction:column;gap:18px}
+/* controls */
+input[type=text],input[type=number],input[type=datetime-local],input[type=search],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:36px;width:100%}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 12px;min-height:34px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accentText)}
+.btn.pri:hover{filter:brightness(1.08);color:var(--accentText)}
+.btn.sm{min-height:28px;padding:3px 9px;font-size:12.5px}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--crit)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+.panel>header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line2)}
+.panel>header h2{margin:0;font-size:15px;font-weight:600;flex:1;min-width:160px}
+.panel>header .hint{color:var(--muted);font-size:12.5px}
+.pbody{padding:14px 16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;cursor:pointer;text-align:left}
+.kpi:hover{border-color:var(--accent)}
+div.kpi{cursor:default}div.kpi:hover{border-color:var(--line)}
+.kpi .l{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--f-disp);font-size:32px;font-weight:800;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.crit .v{color:var(--crit)} .kpi.warn .v{color:var(--warn)}
+/* tables */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface2)}
+td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:middle}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface2)}
+td.r,th.r{text-align:right}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:11px;font-size:11.5px;font-weight:600;white-space:nowrap;background:var(--idleSoft);color:var(--idle)}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip.ok{background:var(--okSoft);color:var(--ok)} .chip.warn{background:var(--warnSoft);color:var(--warn)}
+.chip.crit,.chip.venc{background:var(--critSoft);color:var(--crit)} .chip.info{background:var(--infoSoft);color:var(--info)}
+.chip.acc{background:var(--inkSoft);color:var(--ink)}
+.chip.venc{outline:1px solid var(--crit)}
+.tag{font-size:11px;padding:1px 6px;border:1px solid var(--line);border-radius:4px;color:var(--muted);white-space:nowrap}
+.bad{color:var(--crit);font-weight:600}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+/* progress flow */
+.flow{display:flex;gap:3px;min-width:180px}
+.flow i{flex:1;height:8px;border-radius:2px;background:var(--line2)}
+.flow i.d{background:var(--accent)} .flow i.p{background:var(--steel)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:11px;color:var(--muted);text-align:center}
+.steps b{display:block;font-family:var(--f-disp);font-size:20px;color:var(--text);font-weight:800}
+/* bars */
+.bar{height:10px;border-radius:5px;background:var(--line2);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.bar.warn>i{background:var(--warn)} .bar.crit>i{background:var(--crit)}
+/* kanban */
+.kan{display:grid;grid-template-columns:repeat(3,minmax(260px,1fr));gap:14px;overflow-x:auto}
+.col{background:var(--surface2);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:120px}
+.col h3{margin:0;padding:10px 12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
+.cards{display:flex;flex-direction:column;gap:8px;padding:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.card .t{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.card .route{font-size:12.5px}
+.card .meta{font-size:12px;color:var(--muted)}
+/* yard */
+.yard{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.blk{border:1px solid var(--line);border-radius:6px;padding:10px}
+.blk h4{margin:0 0 8px;font-family:var(--f-disp);font-size:16px;font-weight:700;display:flex;justify-content:space-between}
+.bays{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+.bay{display:flex;flex-direction:column-reverse;gap:2px}
+.slot{height:16px;border-radius:2px;background:var(--line2);border:1px dashed var(--line)}
+.slot.f{border:none}
+.bayn{font-size:10px;text-align:center;color:var(--muted);font-family:var(--f-mono)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:12px;height:12px;border-radius:2px;display:inline-block}
+/* drawer/modal */
+.ov{position:fixed;inset:0;background:rgba(8,20,30,.45);z-index:20;display:flex;justify-content:flex-end}
+.ov.center{justify-content:center;align-items:flex-start;padding:5vh 16px;overflow:auto}
+.drawer{background:var(--bg);width:min(880px,100%);height:100%;overflow:auto;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.2)}
+.drawer>header{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:12px;align-items:flex-start;z-index:2}
+.drawer>header h2{margin:0;font-family:var(--f-disp);font-size:24px;font-weight:800;line-height:1.1}
+.dbody{padding:18px 20px;display:flex;flex-direction:column;gap:16px}
+.modal{background:var(--surface);border-radius:10px;width:min(620px,100%);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal>header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.modal>header h2{margin:0;font-size:17px;flex:1}
+.modal form{padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:12px;font-weight:600;color:var(--muted)}
+.fld.full{grid-column:1/-1}
+.fld .err{color:var(--crit);font-size:12px;min-height:0}
+.mfoot{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;padding-top:6px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px}
+.facts div{display:flex;flex-direction:column}
+.facts small{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.facts b{font-weight:600}
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.dlbox{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.dlbox .big{font-family:var(--f-disp);font-size:28px;font-weight:800;line-height:1}
+.dlbox.crit,.dlbox.venc{border-color:var(--crit);background:var(--critSoft)} .dlbox.warn{border-color:var(--warn);background:var(--warnSoft)}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.checks label{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface);cursor:pointer}
+.checks input{width:16px;height:16px;accent-color:var(--accent)}
+.timeline{display:flex;flex-direction:column;gap:0;font-size:13px}
+.timeline div{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line2)}
+.drop{border:2px dashed var(--line);border-radius:8px;padding:22px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;background:var(--surface2)}
+.drop.over{border-color:var(--accent);background:var(--accentSoft)}
+.cols-ex{font-family:var(--f-mono);font-size:12px;color:var(--muted);line-height:1.6}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#141414;border-left:4px solid var(--accent);color:#fff;padding:10px 16px;border-radius:8px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{border:none;background:none;padding:8px 12px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.scgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.sc{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--steel);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.sc.ok{border-left-color:var(--ok)} .sc.warn{border-left-color:var(--warn)} .sc.crit{border-left-color:var(--crit)}
+.sc .l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sc b{font-weight:600;font-size:13.5px;text-wrap:balance}
+.sc .v{font-family:var(--f-disp);font-size:30px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.sc .s{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.chart{padding:12px 16px}
+.chart svg{width:100%;height:auto;display:block}
+.chart .gl{stroke:var(--line2);stroke-width:1}
+.chart .ax{fill:var(--muted);font-size:13px;font-family:var(--f-ui)}
+.chart .tgt{stroke:var(--text);stroke-width:1.5;stroke-dasharray:5 4}
+.chart .tgtl{fill:var(--text);font-size:13px;font-weight:600;font-family:var(--f-ui)}
+.chart .band{fill:var(--okSoft)}
+.hb{display:flex;flex-direction:column;gap:8px;padding:14px 16px}
+.hbr{display:grid;grid-template-columns:110px 1fr auto;gap:10px;align-items:center;font-size:13px}
+.hbt{height:14px;background:var(--line2);border-radius:3px;overflow:hidden}
+.hbt i{display:block;height:100%;border-radius:3px}
+.hbv{min-width:60px;text-align:right}
+.formula{padding:10px 16px;border-top:1px dashed var(--line);font-size:12px;color:var(--muted)}
+body.locked .app{display:none}
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:var(--nav)}
+.acard{background:var(--surface);border-radius:10px;padding:28px 26px;width:min(400px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:12px;border-top:4px solid var(--accent)}
+.alogo{width:190px;max-width:100%;height:auto}
+.asub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:-6px}
+.acard h2{margin:8px 0 0;font-size:20px;font-weight:800}
+.acard p{margin:0}
+.aform{display:flex;flex-direction:column;gap:12px}
+.aform label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.aform input{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 10px;font-size:15px;color:var(--text)}
+.aform .btn{justify-content:center;min-height:40px;font-size:15px}
+.alinks{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lnk{background:none;border:none;color:var(--accent);cursor:pointer;padding:4px 0;font-weight:600}
+.amsg{background:var(--critSoft);color:var(--crit);padding:8px 10px;border-radius:6px;font-size:13px}
+.amsg.ok{background:var(--okSoft);color:var(--ok)}
+.who{display:flex;flex-direction:column;line-height:1.2;font-size:12.5px;text-align:right}
+.who span{color:var(--muted);font-size:11.5px}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;padding-block:10px 6px}
+  .brand{padding:0 16px 10px;border:none}
+  .nav{flex-direction:row;overflow-x:auto;padding:0 10px 6px}
+  .nav .grp,.side-foot{display:none}
+  .nav a{white-space:nowrap}
+  .top{padding:10px 16px}
+  .view{padding-inline:16px}
+  .demo{padding:6px 16px}
+  .grid2{grid-template-columns:1fr}
+  .kan{grid-template-columns:repeat(3,minmax(250px,86vw))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body class="locked">
+<div id="auth"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="data:image/png;base64,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" alt="Ziran" width="176" height="43"><span>Sistema de logística · Salvador</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <span id="sync">Sincronizado</span>
+      <span>Ziran Logística v1.0</span>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="top">
+      <h1 id="title">Painel</h1>
+      <form class="search" id="searchForm"><input id="q" type="search" placeholder="Contêiner ou booking (ex.: MSCU…)" aria-label="Buscar contêiner ou booking"><button class="btn" type="submit">Buscar</button></form>
+      <span class="clock" id="clock"></span>
+      <div class="who" id="who"></div>
+      <button class="btn sm" id="logout" type="button">Sair</button>
+    </div>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+/* ============ utilidades ============ */
+const H=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=s=>document.querySelector(s);
+const HR=3600e3, DAY=24*HR;
+const now=()=>Date.now();
+const iso=t=>new Date(t).toISOString();
+const fmtDT=v=>{if(!v)return '—';const d=new Date(v);if(isNaN(d))return '—';return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});};
+const fmtD=v=>{if(!v)return '—';const d=new Date(v);return isNaN(d)?'—':d.toLocaleDateString('pt-BR');};
+const nf=(v,d=0)=>(v==null||v===''||isNaN(v))?'—':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const toLocalInput=v=>{if(!v)return '';const d=new Date(v);if(isNaN(d))return '';const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
+const uid=p=>p+'-'+Math.random().toString(36).slice(2,7).toUpperCase();
+const norm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function dur(ms){const a=Math.abs(ms),h=Math.floor(a/HR),d=Math.floor(h/24);if(d>=2)return d+'d '+(h%24)+'h';if(h>=1)return h+'h '+String(Math.floor(a%HR/60000)).padStart(2,'0')+'m';return Math.max(1,Math.floor(a/60000))+'min';}
+
+/* ISO 6346 – dígito verificador do contêiner */
+const LV={};(()=>{let v=10;for(const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'){if(v%11===0)v++;LV[ch]=v++;}})();
+function checkDigit(p){let s=0;for(let i=0;i<10;i++){const c=p[i];s+=(/[A-Z]/.test(c)?LV[c]:+c)*Math.pow(2,i);}return (s%11)%10;}
+const mkC=(pre,n)=>{const b=pre+String(n).padStart(6,'0');return b+checkDigit(b);};
+const cleanC=x=>String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function isoOK(x){x=cleanC(x);return /^[A-Z]{3}[UJZ]\d{7}$/.test(x)&&checkDigit(x.slice(0,10))===+x[10];}
+
+/* ============ domínio ============ */
+const CST=['Aguardando retirada','Vazio no pátio','Em ovação','Ovado','Pré-stacking','Em trânsito p/ terminal','Entregue no terminal'];
+const CST_IMP=['Cheio (importação)','Em desova','Vazio pós-desova','Devolvido ao armador','Estoque vazio'];
+const TIPOS=['20DV','40DV','40HC','20RF','40RH','20OT','40FR'];
+const TARA={'20DV':2200,'40DV':3750,'40HC':3900,'20RF':3000,'40RH':4800,'20OT':2300,'40FR':5000};
+const TEU=t=>String(t).startsWith('20')?1:2;
+const ARM=['CMA CGM','MSC','Maersk','COSCO','Hapag-Lloyd'];
+const AREAS=[{id:'ARM1',nome:'Armazém 1',cap:1200},{id:'ARM2',nome:'Armazém 2',cap:900},{id:'PCOB',nome:'Pátio coberto',cap:600}];
+const BLOCOS=['B1','B2','B3','B4'];
+const OT_TIPOS=['Retirada de vazio','Entrega no terminal','Coleta de carga no cliente','Entrega de carga no cliente','Devolução de vazio','Transferência'];
+
+let S; // estado
+function sample(){
+  const t=now(),h=x=>iso(t+x*HR);
+  const bk=(id,armador,booking,navio,viagem,destino,exportador,qtd,tipo,dd,dc,ets,chk)=>({id,armador,booking,navio,viagem,destino,exportador,qtd,tipo,deadlineDraft:h(dd),deadlineCarga:h(dc),ets:h(ets),terminal:'TECON Salvador',check:Object.assign({draft:false,vgm:false,due:false,nf:false},chk),criado:h(-120)});
+  const bookings=[
+    bk('B1','CMA CGM','SSZ0428751','Bahia Express','112E','Rotterdam (NLRTM)','Cacau Sul Exportadora',4,'40HC',18,42,96,{nf:true}),
+    bk('B2','MSC','177SSA0912345','Atlântico Star','NX538','Valência (ESVLC)','Resinas Camaçari S.A.',3,'20DV',-5,9,60,{draft:true,nf:true,due:true}),
+    bk('B3','Maersk','259813377','Ilhéus Bridge','640S','Xangai (CNSHA)','Papel Baiano Ltda',5,'40HC',70,94,130,{}),
+    bk('B4','COSCO','6412987650','Recôncavo Trader','031W','Singapura (SGSIN)','Sisal Nordeste Ind.',2,'40DV',-30,20,70,{nf:true}),
+    bk('B5','Hapag-Lloyd','32145698','Costa do Dendê','2238N','Filadélfia (USPHL)','Frutas do Vale S.F.',2,'40RH',120,140,190,{}),
+  ];
+  const C=[];let n=0;
+  const add=(pre,num,tipo,armador,bookingId,status,extra)=>{const c=Object.assign({id:'C'+(++n),num:mkC(pre,num),tipo,armador,bookingId,status,tara:TARA[tipo],pesoCarga:null,vgm:null,lacre:'',posicao:'',gateIn:null,obs:''},extra||{});if(c.pesoCarga!=null)c.vgm=c.tara+c.pesoCarga;C.push(c);return c;};
+  add('CMAU',481220,'40HC','CMA CGM','B1','Pré-stacking',{pesoCarga:24600,lacre:'CMA7781204',posicao:'B1-02-1',psEntrada:h(-20),gateIn:h(-70)});
+  add('TGHU',905531,'40HC','CMA CGM','B1','Pré-stacking',{pesoCarga:25120,lacre:'CMA7781205',posicao:'B1-02-2',psEntrada:h(-16),gateIn:h(-68)});
+  add('CMAU',733018,'40HC','CMA CGM','B1','Ovado',{pesoCarga:24980,lacre:'CMA7781206',gateIn:h(-60)});
+  add('CMAU',120447,'40HC','CMA CGM','B1','Em ovação',{gateIn:h(-50),posicao:'Doca 2'});
+  add('MSCU',662109,'20DV','MSC','B2','Entregue no terminal',{pesoCarga:21800,lacre:'MSC0045512',gateIn:h(-90),psEntrada:h(-40)});
+  add('MEDU',310882,'20DV','MSC','B2','Em trânsito p/ terminal',{pesoCarga:22040,lacre:'MSC0045513',gateIn:h(-88),psEntrada:h(-38)});
+  add('MSCU',774520,'20DV','MSC','B2','Pré-stacking',{pesoCarga:21950,lacre:'MSC0045514',posicao:'B2-05-1',gateIn:h(-86),psEntrada:h(-30)});
+  add('MSKU',208814,'40HC','Maersk','B3','Vazio no pátio',{gateIn:h(-30),posicao:'V3-11-2'});
+  add('MRKU',551907,'40HC','Maersk','B3','Vazio no pátio',{gateIn:h(-28),posicao:'V3-11-3'});
+  add('MSKU',640203,'40HC','Maersk','B3','Aguardando retirada');
+  add('MSKU',640288,'40HC','Maersk','B3','Aguardando retirada');
+  add('MRKU',119946,'40HC','Maersk','B3','Aguardando retirada');
+  add('CSNU',822614,'40DV','COSCO','B4','Pré-stacking',{pesoCarga:26400,lacre:'CSL3319087',posicao:'B3-01-1',gateIn:h(-80),psEntrada:h(-24)});
+  add('CCLU',470351,'40DV','COSCO','B4','Ovado',{pesoCarga:26150,lacre:'CSL3319088',gateIn:h(-78)});
+  add('HLXU',876402,'40RH','Hapag-Lloyd','B5','Aguardando retirada');
+  add('HLBU',230976,'40RH','Hapag-Lloyd','B5','Aguardando retirada');
+  // importação / depósito
+  add('TGHU',614209,'40HC','CMA CGM',null,'Cheio (importação)',{gateIn:h(-10),posicao:'I1-03-1',bl:'CMDUSSA0098213',obs:'Desova programada'});
+  add('MEDU',905117,'20DV','MSC',null,'Vazio pós-desova',{gateIn:h(-75),posicao:'V1-04-1',bl:'MEDUSS245781'});
+  add('CMAU',558106,'40HC','CMA CGM',null,'Estoque vazio',{gateIn:h(-200),posicao:'V2-07-3'});
+  add('MSKU',337760,'40DV','Maersk',null,'Estoque vazio',{gateIn:h(-150),posicao:'V3-02-1'});
+
+  const cn=i=>C[i].num;
+  const ots=[
+    {id:'OT-0142',tipo:'Retirada de vazio',container:cn(9),bookingId:'B3',origem:'Depot Maersk – Aratu',destino:'Ziran Salvador',agenda:h(3),motorista:'José Carlos Santana',cavalo:'RPX4F21',carreta:'OKV3A52',status:'Programada',criado:h(-6)},
+    {id:'OT-0143',tipo:'Retirada de vazio',container:cn(10),bookingId:'B3',origem:'Depot Maersk – Aratu',destino:'Ziran Salvador',agenda:h(5),motorista:'Marcos Vinícius Reis',cavalo:'QTS9B83',carreta:'PJD1E60',status:'Programada',criado:h(-6)},
+    {id:'OT-0139',tipo:'Entrega no terminal',container:cn(5),bookingId:'B2',origem:'Ziran Salvador',destino:'TECON Salvador',agenda:h(-1),motorista:'Antônio Bispo',cavalo:'PKZ2C47',carreta:'NYU8H14',status:'Em rota',criado:h(-8)},
+    {id:'OT-0137',tipo:'Entrega no terminal',container:cn(4),bookingId:'B2',origem:'Ziran Salvador',destino:'TECON Salvador',agenda:h(-6),motorista:'Rafael Nascimento',cavalo:'SEH7D19',carreta:'OKV3A53',status:'Concluída',criado:h(-12)},
+    {id:'OT-0140',tipo:'Coleta de carga no cliente',container:'',bookingId:'B3',origem:'Papel Baiano Ltda – Camaçari',destino:'Ziran Salvador – Armazém 2',agenda:h(8),motorista:'José Carlos Santana',cavalo:'RPX4F21',carreta:'Sider 3E77',status:'Programada',criado:h(-3)},
+    {id:'OT-0141',tipo:'Devolução de vazio',container:cn(17),bookingId:null,origem:'Ziran Salvador',destino:'Depot MSC – Candeias',agenda:h(1),motorista:'Rafael Nascimento',cavalo:'SEH7D19',carreta:'OKV3A53',status:'Programada',criado:h(-2)},
+  ];
+  const lotes=[
+    {id:'L-0311',cliente:'Cacau Sul Exportadora',nf:'45.221',descricao:'Cacau em amêndoas – sacaria 60 kg',embalagem:'Sacaria',volumes:1600,saldo:420,peso:96000,m3:150,area:'ARM1',posicao:'R2-Q05',entrada:h(-240),freeTime:15,bookingId:'B1',origem:'Coleta cliente'},
+    {id:'L-0314',cliente:'Papel Baiano Ltda',nf:'88.904',descricao:'Bobinas de papel kraft',embalagem:'Bobina',volumes:180,saldo:180,peso:112000,m3:260,area:'ARM2',posicao:'R1-Q01',entrada:h(-50),freeTime:10,bookingId:'B3',origem:'Coleta cliente'},
+    {id:'L-0309',cliente:'Resinas Camaçari S.A.',nf:'12.557',descricao:'Resina PET – big bag 1.100 kg',embalagem:'Big bag',volumes:60,saldo:0,peso:66000,m3:95,area:'ARM1',posicao:'R4-Q02',entrada:h(-190),freeTime:10,bookingId:'B2',origem:'Coleta cliente',saida:h(-40)},
+    {id:'L-0312',cliente:'Autopeças Recôncavo',nf:'—',descricao:'Peças automotivas – caixas paletizadas',embalagem:'Palete',volumes:42,saldo:42,peso:15800,m3:58,area:'PCOB',posicao:'P-07',entrada:h(-216),freeTime:7,bookingId:null,origem:'Desova '+cn(17)},
+    {id:'L-0315',cliente:'Sisal Nordeste Ind.',nf:'30.118',descricao:'Fibra de sisal prensada – fardos',embalagem:'Fardo',volumes:320,saldo:320,peso:48000,m3:210,area:'ARM2',posicao:'R3-Q02',entrada:h(-20),freeTime:10,bookingId:'B4',origem:'Coleta cliente'},
+  ];
+  const ops=[
+    {id:'OV-0221',tipo:'Ovação',container:cn(3),bookingId:'B1',cliente:'Cacau Sul Exportadora',loteId:'L-0311',volumes:400,peso:null,conferente:'Edvaldo',inicio:h(-1.5),fim:null,status:'Em andamento',programado:h(-2)},
+    {id:'OV-0220',tipo:'Ovação',container:cn(2),bookingId:'B1',cliente:'Cacau Sul Exportadora',loteId:'L-0311',volumes:400,peso:24980,conferente:'Edvaldo',inicio:h(-8),fim:h(-6),status:'Concluída',programado:h(-9),lacre:'CMA7781206'},
+    {id:'OV-0222',tipo:'Ovação',container:cn(7),bookingId:'B3',cliente:'Papel Baiano Ltda',loteId:'L-0314',volumes:36,peso:null,conferente:'',inicio:null,fim:null,status:'Programada',programado:h(20)},
+    {id:'DS-0104',tipo:'Desova',container:cn(16),bookingId:null,bl:'CMDUSSA0098213',cliente:'Autopeças Recôncavo',loteId:null,volumes:null,peso:null,conferente:'',inicio:null,fim:null,status:'Programada',programado:h(4)},
+    {id:'DS-0103',tipo:'Desova',container:cn(17),bookingId:null,bl:'MEDUSS245781',cliente:'Autopeças Recôncavo',loteId:'L-0312',volumes:42,peso:15800,conferente:'Joilson',inicio:h(-216),fim:h(-214),status:'Concluída',programado:h(-218)},
+  ];
+  const cad={
+    clientes:['Cacau Sul Exportadora','Resinas Camaçari S.A.','Papel Baiano Ltda','Sisal Nordeste Ind.','Frutas do Vale S.F.','Autopeças Recôncavo'],
+    armadores:ARM.slice(),
+    navios:['Bahia Express','Atlântico Star','Ilhéus Bridge','Recôncavo Trader','Costa do Dendê'],
+    motoristas:[{nome:'José Carlos Santana',cnh:'E',tel:'(71) 9 8812-4410'},{nome:'Marcos Vinícius Reis',cnh:'E',tel:'(71) 9 9120-3387'},{nome:'Antônio Bispo',cnh:'E',tel:'(71) 9 8705-1192'},{nome:'Rafael Nascimento',cnh:'E',tel:'(71) 9 9344-6021'}],
+    veiculos:[{placa:'RPX4F21',tipo:'Cavalo'},{placa:'QTS9B83',tipo:'Cavalo'},{placa:'PKZ2C47',tipo:'Cavalo'},{placa:'SEH7D19',tipo:'Cavalo'},{placa:'OKV3A52',tipo:'Carreta porta-contêiner 40'},{placa:'OKV3A53',tipo:'Carreta porta-contêiner 40'},{placa:'PJD1E60',tipo:'Carreta porta-contêiner 40'},{placa:'NYU8H14',tipo:'Carreta porta-contêiner 20/40'}],
+  };
+  const log=[
+    {ts:h(-70),ref:cn(0),msg:'Gate In – vazio retirado do depot CMA CGM'},{ts:h(-24),ref:cn(0),msg:'Ovação concluída – lacre CMA7781204'},{ts:h(-20),ref:cn(0),msg:'Posicionado no pré-stacking B1-02-1'},
+    {ts:h(-6),ref:cn(4),msg:'Entregue no TECON Salvador (OT-0137)'},{ts:h(-1),ref:cn(5),msg:'Saiu para o TECON Salvador (OT-0139)'},
+    {ts:h(-5),ref:'177SSA0912345',msg:'Draft enviado ao armador'},
+  ];
+  return {v:1,bookings,containers:C,ots,lotes,ops,cad,log,seq:{ot:143,ov:222,ds:104,lote:315,bk:5,c:C.length}};
+}
+/* persistência: ver bloco ONLINE (Firebase) */
+
+const bkById=id=>S.bookings.find(b=>b.id===id);
+const cByNum=n=>S.containers.find(c=>c.num===cleanC(n));
+const cOf=b=>S.containers.filter(c=>c.bookingId===b.id);
+const loteById=id=>S.lotes.find(l=>l.id===id);
+function log(ref,msg){S.log.push({ts:iso(now()),ref,msg});}
+function nextId(kind,prefix){S.seq[kind]=(S.seq[kind]||0)+1;return prefix+'-'+String(S.seq[kind]).padStart(4,'0');}
+
+/* deadlines */
+function urg(ts,pending){if(!pending)return 'ok';const d=new Date(ts)-now();if(d<0)return 'venc';if(d<24*HR)return 'crit';if(d<48*HR)return 'warn';return 'ok';}
+function dlText(ts,pending){if(!ts)return '—';const d=new Date(ts)-now();if(!pending)return 'Cumprido';return d<0?'Vencido há '+dur(d):'Faltam '+dur(d);}
+function dlChip(ts,pending){const u=urg(ts,pending);return `<span class="chip ${u==='ok'&&pending?'':u}">${H(dlText(ts,pending))}</span>`;}
+function bookingState(b){
+  const cs=cOf(b),total=Math.max(b.qtd,cs.length);
+  const idx=c=>CST.indexOf(c.status);
+  const entregue=cs.filter(c=>idx(c)>=6).length;
+  const ovados=cs.filter(c=>idx(c)>=3).length;
+  const pendCarga=total-entregue;
+  const draftPend=!b.check.draft;
+  const vgmPend=cs.some(c=>idx(c)>=3&&!c.vgm)||(!b.check.vgm&&ovados>0);
+  const uD=urg(b.deadlineDraft,draftPend),uC=urg(b.deadlineCarga,pendCarga>0);
+  const rank={venc:0,crit:1,warn:2,ok:3};
+  const worst=rank[uD]<rank[uC]?uD:uC;
+  const encerrado=pendCarga===0&&!draftPend;
+  return {cs,total,entregue,ovados,pendCarga,draftPend,vgmPend,uD,uC,worst,encerrado,
+    steps:{ret:cs.filter(c=>idx(c)>=1).length,ov:ovados,ps:cs.filter(c=>idx(c)>=4).length,term:entregue}};
+}
+const statusChipC=s=>{const m={'Aguardando retirada':'','Vazio no pátio':'info','Em ovação':'warn','Ovado':'acc','Pré-stacking':'acc','Em trânsito p/ terminal':'info','Entregue no terminal':'ok','Cheio (importação)':'warn','Em desova':'warn','Vazio pós-desova':'info','Devolvido ao armador':'ok','Estoque vazio':''};return `<span class="chip ${m[s]||''}">${H(s)}</span>`;};
+const chipOT=s=>`<span class="chip ${s==='Concluída'?'ok':s==='Em rota'||s==='Em andamento'?'info':'warn'}">${H(s)}</span>`;
+function flowBar(b,st){const cells=[];for(let i=0;i<st.total;i++){const c=st.cs[i];const k=c?CST.indexOf(c.status):-1;cells.push(`<i class="${k>=6?'d':k>=1?'p':''}" title="${H(c?c.num+' – '+c.status:'Contêiner ainda não vinculado')}"></i>`);}return `<div class="flow">${cells.join('')}</div>`;}
+
+/* ============ navegação ============ */
+const VIEWS=[
+  {id:'painel',nome:'Painel',g:'Operação'},
+  {id:'exportacao',nome:'Exportação',g:'Operação'},
+  {id:'conteineres',nome:'Contêineres',g:'Operação'},
+  {id:'transporte',nome:'Transporte',g:'Operação'},
+  {id:'ovacao',nome:'Ovação / Desova',g:'Operação'},
+  {id:'prestacking',nome:'Pré-stacking',g:'Operação'},
+  {id:'armazenagem',nome:'Armazenagem',g:'Operação'},
+  {id:'relatorios',nome:'Relatórios',g:'Análise'},
+  {id:'importar',nome:'Importar dados',g:'Dados'},
+  {id:'cadastros',nome:'Cadastros',g:'Dados'},
+  {id:'usuarios',nome:'Usuários',g:'Administração'},
+];
+let cur='painel';
+function counts(){
+  let dl=0;S.bookings.forEach(b=>{const s=bookingState(b);if(!s.encerrado&&(['venc','crit'].includes(s.uD)||['venc','crit'].includes(s.uC)))dl++;});
+  return {exportacao:dl,armazenagem:S.lotes.filter(l=>l.saldo>0&&diasArm(l)>l.freeTime).length};
+}
+function renderNav(){const c=counts();c.usuarios=usersList.filter(u=>u.status==='pendente').length;let g='',h='';VIEWS.filter(allowed).forEach(v=>{if(v.g!==g){g=v.g;h+=`<div class="grp">${g}</div>`;}h+=`<a href="#${v.id}" class="${v.id===cur?'on':''}" data-v="${v.id}"><span>${v.nome}</span>${c[v.id]?`<span class="badge" title="Itens que precisam de atenção">${c[v.id]}</span>`:''}</a>`;});$('#nav').innerHTML=h;}
+function go(v){if(!VIEWS.find(x=>x.id===v)||!allowed(v))v='painel';cur=v;try{history.replaceState(null,'','#'+v);}catch(e){}render();window.scrollTo(0,0);}
+$('#nav').addEventListener('click',e=>{const a=e.target.closest('a[data-v]');if(!a)return;e.preventDefault();go(a.dataset.v);});
+function render(){renderNav();$('#title').textContent=VIEWS.find(v=>v.id===cur).nome;$('#view').innerHTML=R[cur]();bindView();}
+function bindView(){}
+
+/* ============ toast / modal / drawer ============ */
+let tT;function toast(m){clearTimeout(tT);let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t);}t.textContent=m;t.hidden=false;tT=setTimeout(()=>t.hidden=true,3200);}
+const layer=$('#layer');
+let drawerFn=null;
+function closeAll(){layer.innerHTML='';drawerFn=null;}
+function openDrawer(fn){drawerFn=fn;paintDrawer();}
+function paintDrawer(){if(!drawerFn)return;layer.innerHTML=`<div class="ov" data-close><div class="drawer" role="dialog" aria-modal="true">${drawerFn()}</div></div>`;}
+function refresh(){save();render();if(drawerFn)paintDrawer();}
+layer.addEventListener('click',e=>{if(e.target.hasAttribute('data-close')&&e.target===e.currentTarget.firstElementChild){closeAll();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('.ov.center'))$('.ov.center').remove();else closeAll();}});
+
+/* formulário genérico */
+function form(title,fields,onSave,btn='Salvar'){
+  const ov=document.createElement('div');ov.className='ov center';
+  const inp=f=>{const id='f_'+f.k,v=f.v??'';
+    if(f.type==='select')return `<select id="${id}" name="${f.k}">${(f.opts||[]).map(o=>{const val=typeof o==='object'?o.v:o,lab=typeof o==='object'?o.l:o;return `<option value="${H(val)}" ${String(val)===String(v)?'selected':''}>${H(lab)}</option>`;}).join('')}</select>`;
+    if(f.type==='textarea')return `<textarea id="${id}" name="${f.k}" rows="2">${H(v)}</textarea>`;
+    if(f.type==='datetime')return `<input id="${id}" name="${f.k}" type="datetime-local" value="${H(toLocalInput(v))}">`;
+    return `<input id="${id}" name="${f.k}" type="${f.type==='number'?'number':'text'}" ${f.type==='number'?'step="any"':''} value="${H(v)}" ${f.ph?`placeholder="${H(f.ph)}"`:''} ${f.list?`list="dl_${f.k}"`:''} autocomplete="off">${f.list?`<datalist id="dl_${f.k}">${f.list.map(o=>`<option value="${H(o)}">`).join('')}</datalist>`:''}`;};
+  ov.innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-label="${H(title)}"><header><h2>${H(title)}</h2><button class="btn ghost" type="button" data-x aria-label="Fechar">✕</button></header>
+  <form novalidate>${fields.map(f=>`<div class="fld ${f.full?'full':''}"><label for="f_${f.k}">${H(f.label)}${f.req?' *':''}</label>${inp(f)}${f.help?`<span class="muted small">${H(f.help)}</span>`:''}<span class="err" data-err="${f.k}"></span></div>`).join('')}
+  <div class="mfoot"><button class="btn" type="button" data-x>Cancelar</button><button class="btn pri" type="submit">${H(btn)}</button></div></form></div>`;
+  document.body.appendChild(ov);
+  const first=ov.querySelector('input,select,textarea');if(first)first.focus();
+  ov.addEventListener('click',e=>{if(e.target===ov||e.target.closest('[data-x]'))ov.remove();});
+  ov.querySelector('form').addEventListener('submit',e=>{e.preventDefault();
+    const o={};let ok=true;ov.querySelectorAll('[data-err]').forEach(x=>x.textContent='');
+    fields.forEach(f=>{let v=ov.querySelector('#f_'+f.k).value.trim();
+      if(f.type==='number')v=v===''?null:Number(v);
+      if(f.type==='datetime')v=v?iso(new Date(v)):null;
+      if(f.req&&(v===null||v==='')){ok=false;ov.querySelector(`[data-err="${f.k}"]`).textContent='Campo obrigatório';}
+      if(f.cntr&&v){v=cleanC(v);if(!isoOK(v)){ok=false;ov.querySelector(`[data-err="${f.k}"]`).textContent='Número inválido: confira o dígito verificador (ISO 6346)';}}
+      o[f.k]=v;});
+    if(!ok)return;const r=onSave(o);if(r&&r.err){const el=ov.querySelector(`[data-err="${r.k}"]`);if(el)el.textContent=r.err;return;}ov.remove();refresh();});
+}
+
+/* ============ PAINEL ============ */
+const R={};
+R.painel=()=>{
+  const act=S.bookings.map(b=>({b,s:bookingState(b)})).filter(x=>!x.s.encerrado);
+  const crit=act.filter(x=>['venc','crit'].includes(x.s.uD)||['venc','crit'].includes(x.s.uC)).length;
+  const ps=S.containers.filter(c=>c.status==='Pré-stacking');
+  const psTeu=ps.reduce((a,c)=>a+TEU(c.tipo),0);
+  const otOpen=S.ots.filter(o=>o.status!=='Concluída');
+  const opsOpen=S.ops.filter(o=>o.status!=='Concluída');
+  const occ=AREAS.map(a=>({a,u:S.lotes.filter(l=>l.area===a.id&&l.saldo>0).reduce((s,l)=>s+l.m3*(l.saldo/l.volumes),0)}));
+  const occT=occ.reduce((s,x)=>s+x.u,0)/AREAS.reduce((s,a)=>s+a.cap,0);
+  // radar
+  const radar=[];act.forEach(({b,s})=>{
+    if(s.draftPend)radar.push({b,tipo:'Draft',ts:b.deadlineDraft,u:s.uD,pend:'Draft não enviado ao armador'});
+    if(s.pendCarga>0)radar.push({b,tipo:'Carga',ts:b.deadlineCarga,u:s.uC,pend:`${s.pendCarga} de ${s.total} cntr não entregues no terminal`});
+    if(s.vgmPend&&s.ovados)radar.push({b,tipo:'VGM',ts:b.deadlineDraft,u:urg(b.deadlineDraft,true),pend:'VGM pendente de envio ao armador'});
+  });
+  const rank={venc:0,crit:1,warn:2,ok:3};radar.sort((a,b)=>rank[a.u]-rank[b.u]||new Date(a.ts)-new Date(b.ts));
+  const agenda=[...S.ots.filter(o=>o.status!=='Concluída').map(o=>({ts:o.agenda,what:o.tipo,ref:o.container||o.origem,who:o.motorista,st:o.status,id:o.id,k:'ot'})),
+    ...S.ops.filter(o=>o.status!=='Concluída').map(o=>({ts:o.inicio||o.programado,what:o.tipo,ref:o.container,who:o.conferente||'—',st:o.status,id:o.id,k:'op'}))]
+    .filter(x=>new Date(x.ts)-now()<36*HR).sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+  return `
+  <section class="kpis">
+    <button class="kpi ${crit?'crit':''}" data-go="exportacao"><span class="l">Deadlines críticos</span><span class="v">${crit}</span><span class="s">vencidos ou em menos de 24h</span></button>
+    <button class="kpi" data-go="exportacao"><span class="l">Bookings ativos</span><span class="v">${act.length}</span><span class="s">${act.reduce((a,x)=>a+x.s.total,0)} contêineres</span></button>
+    <button class="kpi" data-go="prestacking"><span class="l">Pré-stacking</span><span class="v">${ps.length}</span><span class="s">${psTeu} TEU aguardando terminal</span></button>
+    <button class="kpi" data-go="transporte"><span class="l">Transportes abertos</span><span class="v">${otOpen.length}</span><span class="s">${otOpen.filter(o=>o.status==='Em rota').length} em rota agora</span></button>
+    <button class="kpi" data-go="ovacao"><span class="l">Ovação / desova</span><span class="v">${opsOpen.length}</span><span class="s">${opsOpen.filter(o=>o.status==='Em andamento').length} em andamento</span></button>
+    <button class="kpi ${occT>.85?'crit':occT>.7?'warn':''}" data-go="armazenagem"><span class="l">Ocupação armazéns</span><span class="v">${nf(occT*100)}%</span><span class="s">${nf(occ.reduce((s,x)=>s+x.u,0))} de ${nf(AREAS.reduce((s,a)=>s+a.cap,0))} m³</span></button>
+  </section>
+  <section class="panel"><header><h2>Radar de deadlines da exportação</h2><span class="hint">Ordenado por urgência · vermelho = vencido ou &lt; 24h · âmbar = &lt; 48h</span></header>
+  <div class="tw"><table><thead><tr><th>Situação</th><th>Deadline</th><th>Prazo</th><th>Booking</th><th>Armador</th><th>Navio / viagem</th><th>Exportador</th><th>Pendência</th></tr></thead><tbody>
+  ${radar.length?radar.map(r=>`<tr class="click" data-bk="${r.b.id}"><td><span class="chip ${r.u}">${H(dlText(r.ts,true))}</span></td><td><b>${r.tipo}</b></td><td class="num">${fmtDT(r.ts)}</td><td class="mono">${H(r.b.booking)}</td><td>${H(r.b.armador)}</td><td>${H(r.b.navio)} <span class="muted">${H(r.b.viagem)}</span></td><td>${H(r.b.exportador)}</td><td class="${['venc','crit'].includes(r.u)?'bad':''}">${H(r.pend)}</td></tr>`).join(''):`<tr><td colspan="8" class="empty">Nenhuma pendência de deadline.</td></tr>`}
+  </tbody></table></div></section>
+  <div class="grid2">
+    <section class="panel"><header><h2>Andamento por booking</h2><span class="hint">retirada → ovação → pré-stacking → terminal</span></header><div class="pbody" style="display:flex;flex-direction:column;gap:14px">
+    ${act.map(({b,s})=>`<div class="click" data-bk="${b.id}" style="cursor:pointer;display:flex;flex-direction:column;gap:6px"><div class="row"><b class="mono">${H(b.booking)}</b><span class="muted small">${H(b.navio)} · ${b.qtd}×${H(b.tipo)} · ${H(b.exportador)}</span><span class="spacer"></span>${dlChip(b.deadlineCarga,s.pendCarga>0)}</div>
+      <div class="steps"><div><b>${s.steps.ret}</b>retirados</div><div><b>${s.steps.ov}</b>ovados</div><div><b>${s.steps.ps}</b>pré-stacking</div><div><b>${s.steps.term}</b>no terminal</div></div>${flowBar(b,s)}</div>`).join('')}
+    </div></section>
+    <section class="panel"><header><h2>Próximas 36 horas</h2><span class="hint">transportes e ovações/desovas abertos</span></header><div class="tw"><table><thead><tr><th>Quando</th><th>Operação</th><th>Contêiner / origem</th><th>Responsável</th><th>Status</th></tr></thead><tbody>
+    ${agenda.length?agenda.map(a=>`<tr class="click" data-goto="${a.k==='ot'?'transporte':'ovacao'}"><td class="num">${fmtDT(a.ts)}<div class="muted small">${new Date(a.ts)<now()?'há '+dur(new Date(a.ts)-now()):'em '+dur(new Date(a.ts)-now())}</div></td><td>${H(a.what)}<div class="muted small mono">${H(a.id)}</div></td><td class="mono">${H(a.ref)}</td><td>${H(a.who)}</td><td>${chipOT(a.st)}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">Nada agendado.</td></tr>`}
+    </tbody></table></div></section>
+  </div>`;
+};
+
+/* ============ EXPORTAÇÃO ============ */
+let fBk={q:'',st:'ativos'};
+R.exportacao=()=>{
+  const rows=S.bookings.map(b=>({b,s:bookingState(b)})).filter(({b,s})=>{
+    if(fBk.st==='ativos'&&s.encerrado)return false;if(fBk.st==='encerrados'&&!s.encerrado)return false;
+    const q=norm(fBk.q);return !q||norm([b.booking,b.armador,b.navio,b.exportador,b.destino].join(' ')).includes(q);})
+    .sort((x,y)=>new Date(x.b.deadlineCarga)-new Date(y.b.deadlineCarga));
+  return `<section class="panel"><header><h2>Bookings de exportação</h2>
+    <input type="search" id="bkq" placeholder="Filtrar booking, navio, exportador…" value="${H(fBk.q)}" style="max-width:260px" aria-label="Filtrar bookings">
+    <select id="bkst" style="max-width:150px" aria-label="Situação"><option value="ativos" ${fBk.st==='ativos'?'selected':''}>Ativos</option><option value="encerrados" ${fBk.st==='encerrados'?'selected':''}>Encerrados</option><option value="todos" ${fBk.st==='todos'?'selected':''}>Todos</option></select>
+    <button class="btn pri" data-act="novoBk">+ Novo booking</button></header>
+  <div class="tw"><table><thead><tr><th>Booking</th><th>Armador</th><th>Navio / viagem</th><th>Destino</th><th>Exportador</th><th>Equip.</th><th>Deadline draft</th><th>Deadline carga</th><th>ETS</th><th>Andamento</th></tr></thead><tbody>
+  ${rows.length?rows.map(({b,s})=>`<tr class="click" data-bk="${b.id}"><td class="mono"><b>${H(b.booking)}</b></td><td>${H(b.armador)}</td><td>${H(b.navio)} <span class="muted">${H(b.viagem)}</span></td><td>${H(b.destino)}</td><td>${H(b.exportador)}</td><td class="num">${b.qtd}×${H(b.tipo)}</td>
+   <td><div class="num small">${fmtDT(b.deadlineDraft)}</div>${dlChip(b.deadlineDraft,s.draftPend)}</td><td><div class="num small">${fmtDT(b.deadlineCarga)}</div>${dlChip(b.deadlineCarga,s.pendCarga>0)}</td><td class="num small">${fmtDT(b.ets)}</td><td>${flowBar(b,s)}<div class="muted small">${s.entregue}/${s.total} no terminal</div></td></tr>`).join(''):`<tr><td colspan="10" class="empty">Nenhum booking com esse filtro.</td></tr>`}
+  </tbody></table></div></section>`;
+};
+function bookingFields(b={}){return [
+  {k:'booking',label:'Nº do booking',req:true,v:b.booking},{k:'armador',label:'Armador',type:'select',opts:S.cad.armadores,v:b.armador},
+  {k:'navio',label:'Navio',req:true,v:b.navio,list:S.cad.navios},{k:'viagem',label:'Viagem',v:b.viagem},
+  {k:'destino',label:'Porto de destino (POD)',v:b.destino,ph:'Ex.: Rotterdam (NLRTM)'},{k:'exportador',label:'Exportador / cliente',req:true,v:b.exportador,list:S.cad.clientes},
+  {k:'qtd',label:'Quantidade de contêineres',type:'number',req:true,v:b.qtd??1},{k:'tipo',label:'Tipo de equipamento',type:'select',opts:TIPOS,v:b.tipo||'40HC'},
+  {k:'deadlineDraft',label:'Deadline de draft',type:'datetime',req:true,v:b.deadlineDraft,help:'Prazo para enviar as instruções do BL (draft) ao armador'},
+  {k:'deadlineCarga',label:'Deadline de carga',type:'datetime',req:true,v:b.deadlineCarga,help:'Prazo para o contêiner cheio entrar no terminal'},
+  {k:'ets',label:'ETS (saída do navio)',type:'datetime',v:b.ets},{k:'terminal',label:'Terminal de embarque',v:b.terminal||'TECON Salvador'},
+];}
+function novoBooking(){form('Novo booking',bookingFields(),o=>{
+  if(S.bookings.some(b=>b.booking===o.booking))return {k:'booking',err:'Já existe um booking com esse número'};
+  if(o.deadlineCarga&&o.deadlineDraft&&new Date(o.deadlineCarga)<new Date(o.deadlineDraft)){}
+  S.seq.bk++;const b=Object.assign({id:'B'+S.seq.bk,check:{draft:false,vgm:false,due:false,nf:false},criado:iso(now())},o);S.bookings.push(b);log(b.booking,'Booking cadastrado');toast('Booking '+b.booking+' cadastrado');
+  if(!S.cad.navios.includes(o.navio))S.cad.navios.push(o.navio);if(!S.cad.clientes.includes(o.exportador))S.cad.clientes.push(o.exportador);
+},'Cadastrar booking');}
+
+function bookingDrawer(id){openDrawer(()=>{
+  const b=bkById(id);if(!b)return '';const s=bookingState(b);
+  const acts=c=>{const a=[];switch(c.status){
+    case 'Aguardando retirada':a.push(['otRet','Gerar OT de retirada']);break;
+    case 'Vazio no pátio':if(!S.ops.some(o=>o.container===c.num&&o.status!=='Concluída'))a.push(['progOv','Programar ovação']);else a.push(['gotoOv','Ver ovação']);break;
+    case 'Em ovação':a.push(['gotoOv','Ver ovação']);break;
+    case 'Ovado':a.push(['toPS','Posicionar no pré-stacking']);break;
+    case 'Pré-stacking':if(!S.ots.some(o=>o.container===c.num&&o.status!=='Concluída'))a.push(['otTerm','Gerar OT p/ terminal']);else a.push(['gotoOt','Ver transporte']);break;
+    case 'Em trânsito p/ terminal':a.push(['gotoOt','Ver transporte']);break;}
+    return a.map(([k,l])=>`<button class="btn sm" data-cact="${k}" data-c="${c.id}">${l}</button>`).join(' ');};
+  const falta=s.total-s.cs.length;
+  return `<header><div style="flex:1"><div class="muted small">${H(b.armador)} · booking</div><h2 class="mono">${H(b.booking)}</h2><div class="muted">${H(b.navio)} ${H(b.viagem)} → ${H(b.destino)} · ${H(b.exportador)}</div></div>
+    <button class="btn" data-act="editBk" data-id="${b.id}">Editar</button><button class="btn ghost" data-act="close" aria-label="Fechar">✕</button></header>
+  <div class="dbody">
+    <div class="dl">
+      <div class="dlbox ${s.uD}"><span class="small muted">DEADLINE DE DRAFT</span><span class="big">${H(dlText(b.deadlineDraft,s.draftPend))}</span><span class="num">${fmtDT(b.deadlineDraft)}</span><span class="small">${s.draftPend?'Instruções do BL ainda não enviadas':'Draft enviado ao armador'}</span></div>
+      <div class="dlbox ${s.uC}"><span class="small muted">DEADLINE DE CARGA</span><span class="big">${H(dlText(b.deadlineCarga,s.pendCarga>0))}</span><span class="num">${fmtDT(b.deadlineCarga)}</span><span class="small">${s.pendCarga?`${s.pendCarga} de ${s.total} contêineres ainda fora do terminal`:'Todos entregues no terminal'}</span></div>
+      <div class="dlbox"><span class="small muted">NAVIO</span><span class="big" style="font-size:22px">${H(b.navio)}</span><span class="num">ETS ${fmtDT(b.ets)}</span><span class="small">${H(b.terminal)}</span></div>
+    </div>
+    <section class="panel"><header><h2>Checklist documental</h2><span class="hint">Marque conforme for concluindo</span></header><div class="pbody"><div class="checks">
+      ${[['draft','Draft (instruções do BL) enviado'],['vgm','VGM informado ao armador'],['due','DU-E registrada'],['nf','NF de exportação emitida']].map(([k,l])=>`<label><input type="checkbox" data-chk="${k}" data-id="${b.id}" ${b.check[k]?'checked':''}> ${l}</label>`).join('')}
+    </div>${s.vgmPend?'<p class="bad small" style="margin:10px 0 0">Há contêineres ovados sem VGM informado ao armador.</p>':''}</div></section>
+    <section class="panel"><header><h2>Contêineres (${s.cs.length}/${s.total})</h2>${falta>0?`<button class="btn pri sm" data-act="addC" data-id="${b.id}">+ Vincular contêiner</button>`:''}</header>
+    <div class="tw"><table><thead><tr><th>Contêiner</th><th>Tipo</th><th>Status</th><th class="r">Tara</th><th class="r">Carga</th><th class="r">VGM</th><th>Lacre</th><th>Posição</th><th>Ação</th></tr></thead><tbody>
+    ${s.cs.map(c=>`<tr><td class="mono"><a href="#" data-cnum="${c.num}">${H(c.num)}</a>${isoOK(c.num)?'':' <span class="chip crit" title="Dígito verificador não confere">DV</span>'}</td><td>${H(c.tipo)}</td><td>${statusChipC(c.status)}</td><td class="r num">${nf(c.tara)}</td><td class="r num">${nf(c.pesoCarga)}</td><td class="r num">${nf(c.vgm)}</td><td class="mono">${H(c.lacre||'—')}</td><td class="mono">${H(c.posicao||'—')}</td><td>${acts(c)}</td></tr>`).join('')}
+    ${falta>0?`<tr><td colspan="9" class="muted small">Faltam ${falta} contêiner(es) para completar o booking.</td></tr>`:''}
+    </tbody></table></div></section>
+    <section class="panel"><header><h2>Histórico</h2></header><div class="pbody timeline">${histFor([b.booking,...s.cs.map(c=>c.num)])}</div></section>
+  </div>`;});}
+function histFor(refs){const L=S.log.filter(l=>refs.includes(l.ref)).sort((a,b)=>new Date(b.ts)-new Date(a.ts));return L.length?L.map(l=>`<div><span class="num muted">${fmtDT(l.ts)}</span><span><span class="mono small muted">${H(l.ref)}</span> · ${H(l.msg)}</span></div>`).join(''):'<span class="muted">Sem registros.</span>';}
+
+/* ações de contêiner (fluxo da exportação) */
+function cAction(k,cid){const c=S.containers.find(x=>x.id===cid);if(!c)return;const b=bkById(c.bookingId);
+  if(k==='otRet'){form('OT de retirada de vazio – '+c.num,[
+    {k:'origem',label:'Retirar em',req:true,v:'Depot '+c.armador},{k:'agenda',label:'Agendamento',type:'datetime',req:true,v:iso(now()+2*HR)},
+    {k:'motorista',label:'Motorista',type:'select',opts:S.cad.motoristas.map(m=>m.nome)},{k:'cavalo',label:'Cavalo (placa)',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo==='Cavalo').map(v=>v.placa)},
+    {k:'carreta',label:'Carreta (placa)',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo!=='Cavalo').map(v=>v.placa)}],o=>{
+      const id=nextId('ot','OT');S.ots.push(Object.assign({id,tipo:'Retirada de vazio',container:c.num,bookingId:c.bookingId,destino:'Ziran Salvador',status:'Programada',criado:iso(now())},o));log(c.num,`${id} criada – retirada de vazio`);toast(id+' programada');},'Programar OT');}
+  if(k==='otTerm'){form('OT de entrega no terminal – '+c.num,[
+    {k:'destino',label:'Terminal',req:true,v:b?b.terminal:'TECON Salvador'},{k:'agenda',label:'Janela / agendamento',type:'datetime',req:true,v:iso(Math.min(now()+2*HR,b?new Date(b.deadlineCarga)-2*HR:now()+2*HR))},
+    {k:'motorista',label:'Motorista',type:'select',opts:S.cad.motoristas.map(m=>m.nome)},{k:'cavalo',label:'Cavalo (placa)',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo==='Cavalo').map(v=>v.placa)},
+    {k:'carreta',label:'Carreta (placa)',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo!=='Cavalo').map(v=>v.placa)}],o=>{
+      if(b&&new Date(o.agenda)>new Date(b.deadlineCarga))return {k:'agenda',err:'Agendamento depois do deadline de carga ('+fmtDT(b.deadlineCarga)+')'};
+      const id=nextId('ot','OT');S.ots.push(Object.assign({id,tipo:'Entrega no terminal',container:c.num,bookingId:c.bookingId,origem:'Ziran Salvador',status:'Programada',criado:iso(now())},o));log(c.num,`${id} criada – entrega no ${o.destino}`);toast(id+' programada');},'Programar OT');}
+  if(k==='progOv'){const lots=S.lotes.filter(l=>l.saldo>0&&(!b||l.cliente===b.exportador));form('Programar ovação – '+c.num,[
+    {k:'programado',label:'Início previsto',type:'datetime',req:true,v:iso(now()+HR)},
+    {k:'loteId',label:'Carga (lote em armazém)',type:'select',opts:[{v:'',l:'— carga direta do caminhão —'},...lots.map(l=>({v:l.id,l:`${l.id} · ${l.descricao} · saldo ${nf(l.saldo)} vol.`}))]},
+    {k:'volumes',label:'Volumes previstos',type:'number'},{k:'conferente',label:'Conferente',v:''}],o=>{
+      const id=nextId('ov','OV');S.ops.push(Object.assign({id,tipo:'Ovação',container:c.num,bookingId:c.bookingId,cliente:b?b.exportador:'',peso:null,inicio:null,fim:null,status:'Programada'},o));log(c.num,`${id} – ovação programada`);toast('Ovação '+id+' programada');},'Programar');}
+  if(k==='toPS'){form('Posicionar no pré-stacking – '+c.num,[{k:'posicao',label:'Posição (bloco-fila-altura)',req:true,v:sugPos(),help:'Sugestão: primeira posição livre'}],o=>{
+      const p=o.posicao.toUpperCase();if(S.containers.some(x=>x.posicao===p&&x.status==='Pré-stacking'))return {k:'posicao',err:'Posição ocupada'};
+      c.status='Pré-stacking';c.posicao=p;c.psEntrada=iso(now());log(c.num,'Posicionado no pré-stacking '+p);toast(c.num+' no pré-stacking');},'Confirmar');}
+  if(k==='gotoOv'){closeAll();go('ovacao');}
+  if(k==='gotoOt'){closeAll();go('transporte');}
+}
+function sugPos(){for(const bl of BLOCOS)for(let f=1;f<=8;f++)for(let a=1;a<=3;a++){const p=`${bl}-${String(f).padStart(2,'0')}-${a}`;if(!S.containers.some(c=>c.posicao===p&&c.status==='Pré-stacking'))return p;}return '';}
+function addContainer(bid){const b=bkById(bid);const livres=S.containers.filter(c=>!c.bookingId&&c.status==='Estoque vazio'&&c.armador===b.armador&&c.tipo===b.tipo);
+  form('Vincular contêiner ao booking '+b.booking,[
+    {k:'num',label:'Nº do contêiner',req:true,cntr:true,ph:'AAAU1234567',list:livres.map(c=>c.num),help:livres.length?`${livres.length} vazio(s) ${b.armador} ${b.tipo} em estoque aparecem na lista`:'Sem vazios compatíveis em estoque: será criado como “Aguardando retirada”'},
+    {k:'tipo',label:'Tipo',type:'select',opts:TIPOS,v:b.tipo},{k:'tara',label:'Tara (kg)',type:'number',v:TARA[b.tipo]}],o=>{
+      let c=cByNum(o.num);
+      if(c&&c.bookingId)return {k:'num',err:'Contêiner já vinculado ao booking '+(bkById(c.bookingId)||{}).booking};
+      if(c){c.bookingId=b.id;c.status='Vazio no pátio';c.tipo=o.tipo;c.tara=o.tara||c.tara;}
+      else{S.seq.c++;c={id:'C'+S.seq.c+Math.random().toString(36).slice(2,4),num:o.num,tipo:o.tipo,armador:b.armador,bookingId:b.id,status:'Aguardando retirada',tara:o.tara||TARA[o.tipo],pesoCarga:null,vgm:null,lacre:'',posicao:''};S.containers.push(c);}
+      log(c.num,'Vinculado ao booking '+b.booking);toast(c.num+' vinculado');},'Vincular');}
+
+/* ============ CONTÊINERES ============ */
+let fC={q:'',st:''};
+R.conteineres=()=>{
+  const all=[...CST,...CST_IMP];
+  const rows=S.containers.filter(c=>(!fC.st||c.status===fC.st)&&(!fC.q||norm(c.num+' '+c.armador+' '+(bkById(c.bookingId)||{}).booking).includes(norm(fC.q))));
+  const inv=S.containers.filter(c=>!isoOK(c.num)).length;
+  return `<section class="panel"><header><h2>Dados de contêiner</h2>
+    <input type="search" id="cq" placeholder="Nº, armador ou booking" value="${H(fC.q)}" style="max-width:220px" aria-label="Filtrar contêineres">
+    <select id="cst" style="max-width:210px" aria-label="Status"><option value="">Todos os status</option>${all.map(s=>`<option ${fC.st===s?'selected':''}>${H(s)}</option>`).join('')}</select>
+    <button class="btn pri" data-act="novoC">+ Cadastrar contêiner</button></header>
+    <div class="pbody small muted" style="padding-block:8px;border-bottom:1px solid var(--line2)">${rows.length} contêineres · VGM = tara + peso da carga (SOLAS) · ${inv?`<span class="bad">${inv} com dígito verificador inválido</span>`:'todos com dígito verificador ISO 6346 válido'}</div>
+  <div class="tw"><table><thead><tr><th>Contêiner</th><th>Tipo</th><th>Armador</th><th>Booking / BL</th><th>Status</th><th class="r">Tara kg</th><th class="r">Carga kg</th><th class="r">VGM kg</th><th>Lacre</th><th>Posição</th><th>Gate in</th></tr></thead><tbody>
+  ${rows.slice(0,400).map(c=>{const b=bkById(c.bookingId);return `<tr class="click" data-cnum="${c.num}"><td class="mono"><b>${H(c.num)}</b>${isoOK(c.num)?'':' <span class="chip crit">DV</span>'}</td><td>${H(c.tipo)}</td><td>${H(c.armador)}</td><td class="mono small">${H(b?b.booking:(c.bl||'—'))}</td><td>${statusChipC(c.status)}</td><td class="r num">${nf(c.tara)}</td><td class="r num">${nf(c.pesoCarga)}</td><td class="r num">${nf(c.vgm)}</td><td class="mono small">${H(c.lacre||'—')}</td><td class="mono small">${H(c.posicao||'—')}</td><td class="num small">${fmtDT(c.gateIn)}</td></tr>`;}).join('')||`<tr><td colspan="11" class="empty">Nenhum contêiner.</td></tr>`}
+  </tbody></table></div>${rows.length>400?`<div class="pbody muted small">Mostrando 400 de ${nf(rows.length)}. Use o filtro para encontrar os demais.</div>`:''}</section>`;
+};
+function novoC(){form('Cadastrar contêiner',[
+  {k:'num',label:'Nº do contêiner',req:true,cntr:true,ph:'AAAU1234567'},{k:'tipo',label:'Tipo',type:'select',opts:TIPOS,v:'40HC'},{k:'armador',label:'Armador',type:'select',opts:S.cad.armadores},
+  {k:'status',label:'Situação',type:'select',opts:['Estoque vazio','Cheio (importação)'],v:'Estoque vazio'},{k:'tara',label:'Tara (kg)',type:'number'},{k:'posicao',label:'Posição no pátio'},{k:'bl',label:'BL (importação)'}],o=>{
+    if(cByNum(o.num))return {k:'num',err:'Contêiner já cadastrado'};S.seq.c++;
+    S.containers.push({id:'C'+S.seq.c+Math.random().toString(36).slice(2,4),num:o.num,tipo:o.tipo,armador:o.armador,bookingId:null,status:o.status,tara:o.tara||TARA[o.tipo],pesoCarga:null,vgm:null,lacre:'',posicao:(o.posicao||'').toUpperCase(),gateIn:iso(now()),bl:o.bl});log(o.num,'Gate In registrado ('+o.status+')');toast(o.num+' cadastrado');},'Cadastrar');}
+function cDrawer(num){openDrawer(()=>{const c=cByNum(num);if(!c)return `<header><h2>Não encontrado</h2><button class="btn ghost" data-act="close">✕</button></header>`;const b=bkById(c.bookingId);
+  return `<header><div style="flex:1"><div class="muted small">${H(c.armador)} · ${H(c.tipo)}</div><h2 class="mono">${H(c.num)}</h2><div>${statusChipC(c.status)} ${isoOK(c.num)?'<span class="chip ok">ISO 6346 ok</span>':'<span class="chip crit">Dígito verificador inválido</span>'}</div></div>
+  <button class="btn" data-act="editC" data-id="${c.id}">Editar dados</button><button class="btn ghost" data-act="close" aria-label="Fechar">✕</button></header>
+  <div class="dbody"><section class="panel"><div class="pbody facts">
+    <div><small>Booking</small><b class="mono">${b?`<a href="#" data-bk="${b.id}">${H(b.booking)}</a>`:'—'}</b></div><div><small>BL</small><b class="mono">${H(c.bl||'—')}</b></div>
+    <div><small>Navio</small><b>${H(b?b.navio+' '+b.viagem:'—')}</b></div><div><small>Deadline carga</small><b>${b?fmtDT(b.deadlineCarga):'—'}</b></div>
+    <div><small>Tara</small><b class="num">${nf(c.tara)} kg</b></div><div><small>Peso da carga</small><b class="num">${nf(c.pesoCarga)} kg</b></div><div><small>VGM</small><b class="num">${nf(c.vgm)} kg</b></div>
+    <div><small>Lacre</small><b class="mono">${H(c.lacre||'—')}</b></div><div><small>Posição</small><b class="mono">${H(c.posicao||'—')}</b></div><div><small>Gate in</small><b>${fmtDT(c.gateIn)}</b></div>
+  </div></section>
+  <section class="panel"><header><h2>Histórico do contêiner</h2></header><div class="pbody timeline">${histFor([c.num])}</div></section></div>`;});}
+function editC(id){const c=S.containers.find(x=>x.id===id);form('Editar '+c.num,[
+  {k:'status',label:'Status',type:'select',opts:[...CST,...CST_IMP],v:c.status},{k:'tara',label:'Tara (kg)',type:'number',v:c.tara},{k:'pesoCarga',label:'Peso da carga (kg)',type:'number',v:c.pesoCarga},
+  {k:'lacre',label:'Lacre',v:c.lacre},{k:'posicao',label:'Posição',v:c.posicao},{k:'obs',label:'Observação',type:'textarea',full:true,v:c.obs}],o=>{
+    const old=c.status;Object.assign(c,o);c.posicao=(c.posicao||'').toUpperCase();c.vgm=c.pesoCarga!=null&&c.tara?c.tara+c.pesoCarga:null;log(c.num,old!==c.status?`Status alterado: ${old} → ${c.status}`:'Dados atualizados');toast('Contêiner atualizado');});}
+
+/* ============ TRANSPORTE ============ */
+R.transporte=()=>{
+  const col=st=>{const L=S.ots.filter(o=>o.status===st).sort((a,b)=>new Date(a.agenda)-new Date(b.agenda));
+    return `<div class="col"><h3><span>${st}</span><span>${L.length}</span></h3><div class="cards">${L.map(o=>{const b=bkById(o.bookingId);const late=st==='Programada'&&new Date(o.agenda)<now();
+      const risk=b&&o.tipo==='Entrega no terminal'&&st!=='Concluída'?urg(b.deadlineCarga,true):null;
+      return `<div class="card"><div class="t"><b class="mono">${H(o.id)}</b><span class="tag">${H(o.tipo)}</span></div>
+      ${o.container?`<div class="mono"><a href="#" data-cnum="${H(o.container)}">${H(o.container)}</a>${b?` <span class="muted small">· ${H(b.booking)}</span>`:''}</div>`:''}
+      <div class="route">${H(o.origem)} → <b>${H(o.destino)}</b></div>
+      <div class="meta">${fmtDT(o.agenda)} ${late?'<span class="bad">· atrasada</span>':''} · ${H(o.motorista||'sem motorista')} · <span class="mono">${H(o.cavalo||'')}${o.carreta?' / '+H(o.carreta):''}</span></div>
+      ${risk&&risk!=='ok'?`<div>${dlChip(b.deadlineCarga,true)} <span class="small muted">deadline de carga</span></div>`:''}
+      ${st!=='Concluída'?`<div class="row"><button class="btn sm pri" data-ot="${o.id}" data-to="${st==='Programada'?'Em rota':'Concluída'}">${st==='Programada'?'Iniciar viagem':'Concluir entrega'}</button></div>`:`<div class="meta">Concluída ${fmtDT(o.fim||o.agenda)}</div>`}
+      </div>`;}).join('')||'<div class="muted small" style="padding:6px">Nenhuma OT.</div>'}</div></div>`;};
+  return `<div class="row"><span class="muted">Ordens de transporte (OT) de contêineres e carga solta. Retirada de vazio e entrega no terminal atualizam o status do contêiner.</span><span class="spacer"></span><button class="btn pri" data-act="novaOT">+ Nova OT</button></div>
+  <div class="kan">${col('Programada')}${col('Em rota')}${col('Concluída')}</div>`;
+};
+function novaOT(){form('Nova ordem de transporte',[
+  {k:'tipo',label:'Tipo',type:'select',opts:OT_TIPOS},{k:'container',label:'Contêiner (se houver)',ph:'AAAU1234567',list:S.containers.map(c=>c.num)},
+  {k:'origem',label:'Origem',req:true,v:'Ziran Salvador'},{k:'destino',label:'Destino',req:true},{k:'agenda',label:'Agendamento',type:'datetime',req:true,v:iso(now()+2*HR)},
+  {k:'motorista',label:'Motorista',type:'select',opts:S.cad.motoristas.map(m=>m.nome)},{k:'cavalo',label:'Cavalo',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo==='Cavalo').map(v=>v.placa)},
+  {k:'carreta',label:'Carreta',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo!=='Cavalo').map(v=>v.placa)}],o=>{
+    if(o.container){o.container=cleanC(o.container);if(!isoOK(o.container))return {k:'container',err:'Número inválido (dígito verificador ISO 6346)'};}
+    const c=o.container&&cByNum(o.container);const id=nextId('ot','OT');S.ots.push(Object.assign({id,bookingId:c?c.bookingId:null,status:'Programada',criado:iso(now())},o));if(o.container)log(o.container,`${id} criada – ${o.tipo}`);toast(id+' programada');},'Programar OT');}
+function moveOT(id,to){const o=S.ots.find(x=>x.id===id);const c=o.container&&cByNum(o.container);o.status=to;if(to==='Concluída')o.fim=iso(now());
+  if(c){if(o.tipo==='Retirada de vazio'&&to==='Concluída'){c.status='Vazio no pátio';c.gateIn=iso(now());log(c.num,'Gate In – vazio recebido ('+id+')');}
+    else if(o.tipo==='Entrega no terminal'){if(to==='Em rota'){c.status='Em trânsito p/ terminal';c.posicao='';log(c.num,`Saiu para ${o.destino} (${id})`);}else{c.status='Entregue no terminal';c.entregueAt=iso(now());log(c.num,`Entregue no ${o.destino} (${id})`);}}
+    else if(o.tipo==='Devolução de vazio'&&to==='Concluída'){c.status='Devolvido ao armador';c.posicao='';log(c.num,'Devolvido ao armador ('+id+')');}
+    else log(c.num,`${id} – ${to}`);}
+  toast(`${id}: ${to}`);refresh();}
+
+/* ============ OVAÇÃO / DESOVA ============ */
+let tabOv='abertas';
+R.ovacao=()=>{
+  const L=S.ops.filter(o=>tabOv==='abertas'?o.status!=='Concluída':o.status==='Concluída').sort((a,b)=>new Date(a.inicio||a.programado)-new Date(b.inicio||b.programado));
+  return `<section class="panel"><header><h2>Ordens de ovação e desova</h2><button class="btn" data-act="novaDes">+ Programar desova</button><button class="btn pri" data-act="novaOvLivre">+ Programar ovação</button></header>
+  <div class="pbody" style="padding-block:0"><div class="tabs"><button class="${tabOv==='abertas'?'on':''}" data-tabov="abertas">Abertas (${S.ops.filter(o=>o.status!=='Concluída').length})</button><button class="${tabOv==='concl'?'on':''}" data-tabov="concl">Concluídas</button></div></div>
+  <div class="tw"><table><thead><tr><th>Ordem</th><th>Tipo</th><th>Contêiner</th><th>Booking / BL</th><th>Cliente</th><th>Carga / lote</th><th class="r">Volumes</th><th class="r">Peso kg</th><th>Programado</th><th>Tempo</th><th>Status</th><th></th></tr></thead><tbody>
+  ${L.map(o=>{const b=bkById(o.bookingId),l=loteById(o.loteId);const t=o.inicio?(o.fim?dur(new Date(o.fim)-new Date(o.inicio)):dur(now()-new Date(o.inicio))+' em curso'):'—';
+    const dl=b&&o.status!=='Concluída'?dlChip(b.deadlineCarga,true):'';
+    return `<tr><td class="mono"><b>${H(o.id)}</b></td><td><span class="tag">${H(o.tipo)}</span></td><td class="mono"><a href="#" data-cnum="${H(o.container)}">${H(o.container)}</a></td><td class="mono small">${H(b?b.booking:(o.bl||'—'))}<div>${dl}</div></td><td>${H(o.cliente)}</td><td class="small">${l?H(l.id+' · '+l.descricao):'<span class="muted">—</span>'}</td><td class="r num">${nf(o.volumes)}</td><td class="r num">${nf(o.peso)}</td><td class="num small">${fmtDT(o.programado)}</td><td class="small">${t}<div class="muted">${H(o.conferente||'')}</div></td><td>${chipOT(o.status)}</td>
+    <td>${o.status==='Programada'?`<button class="btn sm pri" data-op="${o.id}" data-opto="start">Iniciar</button>`:o.status==='Em andamento'?`<button class="btn sm pri" data-op="${o.id}" data-opto="end">Concluir</button>`:''}</td></tr>`;}).join('')||`<tr><td colspan="12" class="empty">Nenhuma ordem.</td></tr>`}
+  </tbody></table></div></section>
+  <p class="muted small">Concluir uma ovação registra lacre e peso, calcula o VGM e baixa o saldo do lote no armazém. Concluir uma desova cria o lote da carga no armazém e libera o contêiner vazio.</p>`;
+};
+function opStart(id){const o=S.ops.find(x=>x.id===id);form(`Iniciar ${o.tipo.toLowerCase()} ${o.id}`,[{k:'conferente',label:'Conferente',req:true,v:o.conferente},{k:'doca',label:'Doca / local',v:'Doca 1'}],v=>{
+  o.status='Em andamento';o.inicio=iso(now());o.conferente=v.conferente;const c=cByNum(o.container);if(c){c.status=o.tipo==='Ovação'?'Em ovação':'Em desova';c.posicao=v.doca;log(c.num,`${o.tipo} iniciada (${o.id}) – ${v.doca}`);}toast(o.tipo+' iniciada');},'Iniciar');}
+function opEnd(id){const o=S.ops.find(x=>x.id===id);const c=cByNum(o.container);
+  if(o.tipo==='Ovação'){const l=loteById(o.loteId);form(`Concluir ovação ${o.id} – ${o.container}`,[
+    {k:'volumes',label:'Volumes ovados',type:'number',req:true,v:o.volumes},{k:'peso',label:'Peso da carga (kg)',type:'number',req:true,v:l&&o.volumes?Math.round(l.peso/l.volumes*o.volumes):null,help:l?`Lote ${l.id}: ${nf(l.peso/l.volumes,1)} kg por volume`:''},
+    {k:'lacre',label:'Lacre do armador',req:true},{k:'fotos',label:'Fotos (qtd.)',type:'number',v:6,help:'No sistema final: upload das fotos da ovação'}],v=>{
+      if(l&&v.volumes>l.saldo)return {k:'volumes',err:`Saldo do lote ${l.id} é ${nf(l.saldo)} volumes`};
+      o.status='Concluída';o.fim=iso(now());o.volumes=v.volumes;o.peso=v.peso;o.lacre=v.lacre;
+      if(l){l.saldo-=v.volumes;if(l.saldo<=0){l.saldo=0;l.saida=iso(now());}}
+      if(c){c.status='Ovado';c.pesoCarga=v.peso;c.vgm=c.tara+v.peso;c.lacre=v.lacre;c.posicao='';log(c.num,`Ovação concluída – lacre ${v.lacre}, VGM ${nf(c.vgm)} kg`);}
+      toast('Ovação concluída · VGM '+nf(c?c.vgm:0)+' kg');},'Concluir ovação');}
+  else{form(`Concluir desova ${o.id} – ${o.container}`,[
+    {k:'descricao',label:'Descrição da carga',req:true,full:true},{k:'embalagem',label:'Embalagem',type:'select',opts:['Palete','Caixa','Sacaria','Big bag','Bobina','Fardo','Tambor','Outros']},
+    {k:'volumes',label:'Volumes',type:'number',req:true},{k:'peso',label:'Peso (kg)',type:'number',req:true},{k:'m3',label:'Cubagem (m³)',type:'number',req:true},
+    {k:'area',label:'Área',type:'select',opts:AREAS.map(a=>({v:a.id,l:a.nome}))},{k:'posicao',label:'Posição (rua-quadra)',req:true},{k:'freeTime',label:'Free time (dias)',type:'number',v:7},{k:'avaria',label:'Avarias / ressalvas',type:'textarea',full:true}],v=>{
+      const lid=nextId('lote','L');S.lotes.push({id:lid,cliente:o.cliente,nf:'—',descricao:v.descricao,embalagem:v.embalagem,volumes:v.volumes,saldo:v.volumes,peso:v.peso,m3:v.m3,area:v.area,posicao:v.posicao.toUpperCase(),entrada:iso(now()),freeTime:v.freeTime||7,bookingId:null,origem:'Desova '+o.container,avaria:v.avaria});
+      o.status='Concluída';o.fim=iso(now());o.volumes=v.volumes;o.peso=v.peso;o.loteId=lid;
+      if(c){c.status='Vazio pós-desova';c.posicao='';log(c.num,`Desova concluída – carga no lote ${lid}`);}toast('Desova concluída · lote '+lid+' criado');},'Concluir desova');}}
+function novaDes(){const cands=S.containers.filter(c=>c.status==='Cheio (importação)'&&!S.ops.some(o=>o.container===c.num&&o.status!=='Concluída'));form('Programar desova',[
+  {k:'container',label:'Contêiner cheio',req:true,cntr:true,list:cands.map(c=>c.num),v:cands[0]?cands[0].num:''},{k:'bl',label:'BL',v:cands[0]?cands[0].bl:''},{k:'cliente',label:'Cliente / importador',req:true,list:S.cad.clientes},
+  {k:'programado',label:'Início previsto',type:'datetime',req:true,v:iso(now()+2*HR)},{k:'conferente',label:'Conferente'}],o=>{
+    if(!cByNum(o.container))return {k:'container',err:'Contêiner não cadastrado: cadastre em Contêineres ou importe do SISTER'};
+    const id=nextId('ds','DS');S.ops.push(Object.assign({id,tipo:'Desova',bookingId:null,loteId:null,volumes:null,peso:null,inicio:null,fim:null,status:'Programada'},o));log(o.container,id+' – desova programada');toast('Desova '+id+' programada');},'Programar');}
+function novaOvLivre(){const cands=S.containers.filter(c=>c.bookingId&&c.status==='Vazio no pátio'&&!S.ops.some(o=>o.container===c.num&&o.status!=='Concluída'));
+  if(!cands.length){toast('Nenhum vazio vinculado a booking disponível para ovação');return;}
+  form('Programar ovação',[{k:'c',label:'Contêiner vazio (vinculado a booking)',type:'select',opts:cands.map(c=>({v:c.id,l:c.num+' · '+bkById(c.bookingId).booking}))}],o=>{setTimeout(()=>cAction('progOv',o.c),0);},'Continuar');}
+
+/* ============ PRÉ-STACKING ============ */
+R.prestacking=()=>{
+  const ps=S.containers.filter(c=>['Ovado','Pré-stacking','Em trânsito p/ terminal'].includes(c.status));
+  const navios=[...new Set(S.bookings.map(b=>b.navio))];
+  const pal=['#D6001C','#3A3A3A','#8C8E8E','#2D5F9A','#B7791F','#1F7A48','#7A3E9D'];
+  const colorN=n=>pal[navios.indexOf(n)%pal.length];
+  const byN={};ps.forEach(c=>{const b=bkById(c.bookingId);const k=b?b.navio:'Sem booking';(byN[k]=byN[k]||[]).push(c);});
+  const teu=ps.filter(c=>c.status==='Pré-stacking').reduce((a,c)=>a+TEU(c.tipo),0);
+  const cap=BLOCOS.length*8*3*2;
+  const blk=bl=>{let bays='';for(let f=1;f<=8;f++){let sl='';for(let a=1;a<=3;a++){const p=`${bl}-${String(f).padStart(2,'0')}-${a}`;const c=S.containers.find(x=>x.posicao===p&&x.status==='Pré-stacking');const b=c&&bkById(c.bookingId);
+      sl+=c?`<div class="slot f" style="background:${colorN(b?b.navio:'')}" title="${H(p+' · '+c.num+' · '+(b?b.navio:''))}" data-cnum="${c.num}"></div>`:`<div class="slot" title="${p} livre"></div>`;}
+    bays+=`<div class="bay">${sl}<div class="bayn">${String(f).padStart(2,'0')}</div></div>`;}
+    const n=S.containers.filter(c=>c.status==='Pré-stacking'&&(c.posicao||'').startsWith(bl+'-')).length;
+    return `<div class="blk"><h4><span>Bloco ${bl}</span><span class="small muted num">${n}/24</span></h4><div class="bays">${bays}</div></div>`;};
+  return `<section class="kpis">
+    <div class="kpi"><span class="l">Ocupação do pré-stacking</span><span class="v">${nf(teu/cap*100)}%</span><span class="s">${teu} de ${cap} TEU (4 blocos × 8 filas × 3 alturas)</span></div>
+    <div class="kpi"><span class="l">Aguardando posição</span><span class="v">${ps.filter(c=>c.status==='Ovado').length}</span><span class="s">ovados ainda na doca</span></div>
+    <div class="kpi"><span class="l">Em trânsito p/ terminal</span><span class="v">${ps.filter(c=>c.status==='Em trânsito p/ terminal').length}</span><span class="s">OT em rota</span></div>
+  </section>
+  <section class="panel"><header><h2>Mapa do pré-stacking</h2><div class="legend">${navios.map(n=>`<span><i style="background:${colorN(n)}"></i>${H(n)}</span>`).join('')}</div></header><div class="pbody yard">${BLOCOS.map(blk).join('')}</div>
+  <div class="pbody small muted" style="padding-top:0">Posição no formato bloco-fila-altura (ex.: B1-02-1). Clique num contêiner para ver os dados.</div></section>
+  ${Object.entries(byN).map(([n,L])=>{const b=bkById(L[0].bookingId);return `<section class="panel"><header><h2>${H(n)} ${b?`<span class="muted">${H(b.viagem)}</span>`:''}</h2>${b?`<span class="hint">Deadline de carga ${fmtDT(b.deadlineCarga)}</span>${dlChip(b.deadlineCarga,true)}`:''}</header>
+  <div class="tw"><table><thead><tr><th>Contêiner</th><th>Booking</th><th>Tipo</th><th>Status</th><th>Posição</th><th class="r">VGM kg</th><th>Lacre</th><th>No pré-stacking há</th><th></th></tr></thead><tbody>
+  ${L.map(c=>{const bb=bkById(c.bookingId);const hasOT=S.ots.some(o=>o.container===c.num&&o.status!=='Concluída');return `<tr><td class="mono"><a href="#" data-cnum="${c.num}">${H(c.num)}</a></td><td class="mono small">${H(bb?bb.booking:'—')}</td><td>${H(c.tipo)}</td><td>${statusChipC(c.status)}</td><td class="mono">${H(c.posicao||'—')}</td><td class="r num">${nf(c.vgm)}</td><td class="mono small">${H(c.lacre)}</td><td class="small">${c.psEntrada&&c.status==='Pré-stacking'?dur(now()-new Date(c.psEntrada)):'—'}</td>
+   <td>${c.status==='Ovado'?`<button class="btn sm pri" data-cact="toPS" data-c="${c.id}">Posicionar</button>`:c.status==='Pré-stacking'&&!hasOT?`<button class="btn sm pri" data-cact="otTerm" data-c="${c.id}">Gerar OT p/ terminal</button>`:hasOT?'<span class="small muted">OT aberta</span>':''}</td></tr>`;}).join('')}
+  </tbody></table></div></section>`;}).join('')}`;
+};
+
+/* ============ ARMAZENAGEM ============ */
+const diasArm=l=>Math.floor(((l.saida&&l.saldo<=0?new Date(l.saida):now())-new Date(l.entrada))/DAY);
+let tabArm='estoque';
+R.armazenagem=()=>{
+  const occ=AREAS.map(a=>{const u=S.lotes.filter(l=>l.area===a.id&&l.saldo>0).reduce((s,l)=>s+l.m3*(l.saldo/l.volumes),0);return {a,u,p:u/a.cap};});
+  const L=S.lotes.filter(l=>tabArm==='estoque'?l.saldo>0:l.saldo<=0).sort((a,b)=>new Date(a.entrada)-new Date(b.entrada));
+  return `<section class="kpis">${occ.map(o=>`<div class="kpi" style="cursor:default"><span class="l">${H(o.a.nome)}</span><span class="v">${nf(o.p*100)}%</span><div class="bar ${o.p>.85?'crit':o.p>.7?'warn':''}"><i style="width:${Math.min(100,o.p*100)}%"></i></div><span class="s">${nf(o.u)} de ${nf(o.a.cap)} m³ ocupados</span></div>`).join('')}</section>
+  <section class="panel"><header><h2>Lotes de carga</h2><button class="btn pri" data-act="novoLote">+ Entrada de carga</button></header>
+  <div class="pbody" style="padding-block:0"><div class="tabs"><button class="${tabArm==='estoque'?'on':''}" data-tabarm="estoque">Em estoque (${S.lotes.filter(l=>l.saldo>0).length})</button><button class="${tabArm==='baixados'?'on':''}" data-tabarm="baixados">Baixados</button></div></div>
+  <div class="tw"><table><thead><tr><th>Lote</th><th>Cliente</th><th>NF</th><th>Descrição</th><th class="r">Volumes</th><th class="r">Saldo</th><th class="r">Peso kg</th><th class="r">m³</th><th>Área / posição</th><th>Entrada</th><th>Armazenagem</th><th>Vínculo</th><th></th></tr></thead><tbody>
+  ${L.map(l=>{const d=diasArm(l),exc=d-l.freeTime;const b=bkById(l.bookingId);const a=AREAS.find(x=>x.id===l.area);
+   return `<tr><td class="mono"><b>${H(l.id)}</b></td><td>${H(l.cliente)}</td><td class="mono small">${H(l.nf)}</td><td>${H(l.descricao)}<div class="muted small">${H(l.embalagem)} · ${H(l.origem||'')}</div></td><td class="r num">${nf(l.volumes)}</td><td class="r num"><b>${nf(l.saldo)}</b></td><td class="r num">${nf(l.peso)}</td><td class="r num">${nf(l.m3)}</td><td>${H(a?a.nome:l.area)}<div class="mono small">${H(l.posicao)}</div></td><td class="num small">${fmtD(l.entrada)}</td>
+   <td><span class="chip ${exc>0?'crit':exc>-2?'warn':'ok'}">${d} dia${d===1?'':'s'}</span><div class="small ${exc>0?'bad':'muted'}">${exc>0?`${exc} além do free time (${l.freeTime}d)`:`free time ${l.freeTime}d`}</div></td>
+   <td class="mono small">${b?H(b.booking):'—'}</td><td>${l.saldo>0?`<button class="btn sm" data-saida="${l.id}">Registrar saída</button>`:''}</td></tr>`;}).join('')||`<tr><td colspan="13" class="empty">Nenhum lote.</td></tr>`}
+  </tbody></table></div></section>
+  <p class="muted small">Armazenagem conta dias corridos desde a entrada; acima do free time do cliente o lote fica em vermelho para cobrança. Saídas por ovação baixam o saldo automaticamente.</p>`;
+};
+function novoLote(){form('Entrada de carga no armazém',[
+  {k:'cliente',label:'Cliente',req:true,list:S.cad.clientes},{k:'nf',label:'Nota fiscal',req:true},{k:'descricao',label:'Descrição da carga',req:true,full:true},
+  {k:'embalagem',label:'Embalagem',type:'select',opts:['Palete','Caixa','Sacaria','Big bag','Bobina','Fardo','Tambor','Outros']},{k:'volumes',label:'Volumes',type:'number',req:true},{k:'peso',label:'Peso (kg)',type:'number',req:true},{k:'m3',label:'Cubagem (m³)',type:'number',req:true},
+  {k:'area',label:'Área',type:'select',opts:AREAS.map(a=>({v:a.id,l:a.nome}))},{k:'posicao',label:'Posição (rua-quadra)',req:true},{k:'freeTime',label:'Free time (dias)',type:'number',v:10},
+  {k:'bookingId',label:'Booking de exportação (opcional)',type:'select',opts:[{v:'',l:'— nenhum —'},...S.bookings.map(b=>({v:b.id,l:b.booking+' · '+b.exportador}))]}],o=>{
+    if(o.volumes<=0)return {k:'volumes',err:'Informe a quantidade de volumes'};
+    const id=nextId('lote','L');S.lotes.push(Object.assign({id,saldo:o.volumes,entrada:iso(now()),origem:'Entrada manual'},o,{posicao:o.posicao.toUpperCase(),bookingId:o.bookingId||null,freeTime:o.freeTime||10}));
+    if(!S.cad.clientes.includes(o.cliente))S.cad.clientes.push(o.cliente);log(id,'Entrada no armazém');toast('Lote '+id+' registrado');},'Registrar entrada');}
+function saidaLote(id){const l=loteById(id);form('Saída do lote '+l.id,[{k:'volumes',label:`Volumes (saldo ${nf(l.saldo)})`,type:'number',req:true,v:l.saldo},{k:'destino',label:'Destino / motivo',req:true,v:'Retirada pelo cliente'}],o=>{
+  if(o.volumes>l.saldo||o.volumes<=0)return {k:'volumes',err:'Quantidade maior que o saldo'};l.saldo-=o.volumes;if(l.saldo<=0){l.saldo=0;l.saida=iso(now());}log(l.id,`Saída de ${o.volumes} volumes – ${o.destino}`);toast('Saída registrada');},'Registrar saída');}
+
+/* ============ IMPORTAR ============ */
+const MAP_BK={booking:['booking','booking number','bkg','reserva','n booking','numero booking'],armador:['armador','carrier','shipping line','linha','cli'],navio:['navio','vessel','embarcacao','vessel name'],viagem:['viagem','voyage','viag','voy'],
+  destino:['destino','pod','porto destino','porto de destino','port of discharge','porto descarga'],exportador:['exportador','shipper','cliente','embarcador'],qtd:['qtd','qtde','quantidade','qty','quantity'],tipo:['tipo','type','equipamento','iso','tipo cntr'],
+  deadlineDraft:['deadline draft','deadline de draft','dl draft','draft deadline','deadline documental','si cut off','draft'],deadlineCarga:['deadline carga','deadline de carga','dl carga','cargo deadline','cut off carga','deadline fisico','cy cut off','cut off'],ets:['ets','etd','saida navio','previsao de saida']};
+const MAP_SI={num:['container','conteiner','cntr','unidade','container number','n container'],tipo:['tipo','iso','tipo iso','type'],tara:['tara','tare'],armador:['cli','armador','cliente','linha','owner'],
+  gateIn:['entrada','gate in','data entrada','dt entrada','dt gate in'],gateOut:['saida','gate out','data saida','dt saida'],booking:['booking','reserva'],status:['st e','status','situacao','condicao','estado'],posicao:['posicao','pos','localizacao','local']};
+function mapHeaders(hdr,M){const res={},used=new Set();
+  const cands=[];hdr.forEach((h,i)=>{const n=norm(h);if(!n)return;Object.entries(M).forEach(([k,syn])=>syn.forEach(s=>{if(n===s)cands.push({i,k,sc:100+s.length});else if(n.includes(s)&&s.length>=3)cands.push({i,k,sc:s.length});}));});
+  cands.sort((a,b)=>b.sc-a.sc).forEach(c=>{if(res[c.k]==null&&!used.has(c.i)){res[c.k]=c.i;used.add(c.i);}});return res;}
+function findHeaderRow(rows,M){let best=-1,bs=0;for(let r=0;r<Math.min(rows.length,40);r++){const m=mapHeaders(rows[r].map(String),M);const s=Object.keys(m).length;if(s>bs){bs=s;best=r;}}return bs>=2?best:-1;}
+const ARM_ALIAS={cma:'CMA CGM','cma cgm':'CMA CGM',msc:'MSC',msk:'Maersk',maersk:'Maersk',mae:'Maersk',csl:'COSCO',cosco:'COSCO',hpl:'Hapag-Lloyd','hapag lloyd':'Hapag-Lloyd',hapag:'Hapag-Lloyd'};
+const armNorm=a=>ARM_ALIAS[norm(a)]||String(a||'').trim();
+const TIPO_ALIAS={'22G1':'20DV','22U1':'20OT','42G1':'40DV','45G1':'40HC','45R1':'40RH','22R1':'20RF','42U1':'20OT','45P3':'40FR','20DC':'20DV','40DC':'40DV','40HQ':'40HC','40RF':'40RH','40HR':'40RH'};
+const tipoNorm=t=>{const x=String(t||'').toUpperCase().replace(/\s/g,'');return TIPO_ALIAS[x]||(TIPOS.includes(x)?x:(x.includes('40')&&(x.includes('HC')||x.includes('HQ'))?'40HC':x||'40HC'));};
+const toDate=v=>{if(v==null||v==='')return null;if(v instanceof Date)return isNaN(v)?null:iso(v);if(typeof v==='number'&&window.XLSX){const d=XLSX.SSF.parse_date_code(v);if(d)return iso(new Date(d.y,d.m-1,d.d,d.H,d.M,d.S));}
+  const m=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);if(m){const y=+m[3]<100?2000+ +m[3]:+m[3];return iso(new Date(y,m[2]-1,m[1],m[4]||0,m[5]||0));}const d=new Date(v);return isNaN(d)?null:iso(d);};
+let imp={kind:null,name:'',rows:[],map:{},hdr:[],parsed:[]};
+R.importar=()=>{
+  const box=(k,t,d,cols)=>`<section class="panel"><header><h2>${t}</h2></header><div class="pbody" style="display:flex;flex-direction:column;gap:12px">
+    <p class="muted" style="margin:0">${d}</p>
+    <label class="drop" data-drop="${k}" for="file_${k}"><b>Arraste o arquivo aqui ou clique para escolher</b><span class="muted small">.xls, .xlsx ou .csv</span><input type="file" id="file_${k}" accept=".xls,.xlsx,.csv" data-file="${k}" hidden></label>
+    <div class="cols-ex">Colunas reconhecidas: ${cols}</div></div></section>`;
+  let prev='';
+  if(imp.kind){const M=imp.kind==='bk'?MAP_BK:MAP_SI;const keys=Object.keys(M);const ok=imp.parsed.filter(p=>!p._err);
+    prev=`<section class="panel"><header><h2>Prévia: ${H(imp.name)}</h2><span class="hint">${imp.parsed.length} linhas lidas · ${ok.length} válidas · ${imp.parsed.length-ok.length} com problema</span><button class="btn" data-act="impCancel">Descartar</button><button class="btn pri" data-act="impGo" ${ok.length?'':'disabled'}>Importar ${ok.length} linha${ok.length===1?'':'s'}</button></header>
+    <div class="pbody small"><b>Colunas identificadas:</b> ${keys.map(k=>imp.map[k]!=null?`<span class="chip ok">${k} ← “${H(imp.hdr[imp.map[k]])}”</span>`:`<span class="chip">${k}: não encontrada</span>`).join(' ')}</div>
+    <div class="tw"><table><thead><tr><th>Linha</th>${keys.map(k=>`<th>${k}</th>`).join('')}<th>Situação</th></tr></thead><tbody>
+    ${imp.parsed.slice(0,60).map(p=>`<tr><td class="num muted">${p._row}</td>${keys.map(k=>`<td class="small ${k==='num'||k==='booking'?'mono':''}">${H(/deadline|ets|gate/i.test(k)?fmtDT(p[k]):p[k]??'')}</td>`).join('')}<td class="small">${p._err?`<span class="bad">${H(p._err)}</span>`:`<span class="chip ${p._novo?'info':'ok'}">${p._novo?'novo':'atualiza'}</span>`}</td></tr>`).join('')}
+    </tbody></table></div>${imp.parsed.length>60?`<div class="pbody muted small">Mostrando 60 de ${imp.parsed.length} linhas.</div>`:''}</section>`;}
+  return prev+`<div class="grid2">
+  ${box('si','Relatório do SISTER (Gate In / pátio)','Atualiza os dados dos contêineres: número, tipo ISO, armador, gate in/out, posição e booking. Contêineres novos entram como estoque vazio; se o booking já existir, o contêiner é vinculado a ele. O cabeçalho é localizado automaticamente, mesmo com linhas de título acima.','Container · Tipo (22G1, 45G1, 45R1…) · Tara · Cli/Armador · Entrada · Saída · Booking · St.E · Posição')}
+  ${box('bk','Planilha de bookings','Cria ou atualiza bookings de exportação com os deadlines. Aceita planilhas de armadores e clientes com nomes de coluna variados (português ou inglês).','Booking · Armador · Navio · Viagem · POD/Destino · Exportador/Shipper · Qtd · Tipo · Deadline Draft · Deadline Carga (Cut off) · ETS')}
+  </div>`;
+};
+function readFile(kind,file){if(!window.XLSX){toast('Leitor de planilhas não carregou: verifique a conexão e recarregue a página');return;}
+  const fr=new FileReader();fr.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    const M=kind==='bk'?MAP_BK:MAP_SI;let rows=null,sheet='';
+    for(const sn of wb.SheetNames){const r=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:''});if(findHeaderRow(r,M)>=0){rows=r;sheet=sn;break;}}
+    if(!rows){toast('Não encontrei o cabeçalho esperado neste arquivo. Confira se ele tem as colunas listadas.');return;}
+    const hi=findHeaderRow(rows,M),hdr=rows[hi].map(String),map=mapHeaders(hdr,M);
+    const parsed=[];for(let r=hi+1;r<rows.length;r++){const row=rows[r];if(!row||row.every(v=>v===''||v==null))continue;const p={_row:r+1};
+      Object.entries(map).forEach(([k,i])=>p[k]=row[i]);
+      if(kind==='bk'){p.booking=String(p.booking||'').trim();if(!p.booking)continue;p.armador=armNorm(p.armador);p.tipo=tipoNorm(p.tipo);p.qtd=Number(p.qtd)||1;
+        ['deadlineDraft','deadlineCarga','ets'].forEach(k=>p[k]=toDate(p[k]));
+        if(!p.deadlineDraft&&!p.deadlineCarga)p._err='sem deadlines';p._novo=!S.bookings.some(b=>b.booking===p.booking);}
+      else{p.num=cleanC(p.num);if(!p.num)continue;p.armador=armNorm(p.armador);p.tipoOrig=p.tipo;p.tipo=tipoNorm(p.tipo);p.tara=Number(p.tara)||null;['gateIn','gateOut'].forEach(k=>p[k]=toDate(p[k]));
+        if(!isoOK(p.num))p._err='dígito verificador inválido';p._novo=!cByNum(p.num);}
+      parsed.push(p);}
+    imp={kind,name:file.name+(sheet?' · '+sheet:''),rows,map,hdr,parsed};render();
+  }catch(err){toast('Não consegui ler o arquivo: '+err.message);}};fr.readAsArrayBuffer(file);}
+function impGo(){const ok=imp.parsed.filter(p=>!p._err);let n=0,u=0;
+  if(imp.kind==='bk'){ok.forEach(p=>{let b=S.bookings.find(x=>x.booking===p.booking);const data={armador:p.armador||'—',navio:p.navio||'—',viagem:p.viagem||'',destino:p.destino||'',exportador:p.exportador||'—',qtd:p.qtd,tipo:p.tipo,deadlineDraft:p.deadlineDraft,deadlineCarga:p.deadlineCarga||p.deadlineDraft,ets:p.ets};
+    if(b){Object.keys(data).forEach(k=>{if(data[k]!=null&&data[k]!=='—')b[k]=data[k];});u++;log(b.booking,'Atualizado por importação');}
+    else{S.seq.bk++;b=Object.assign({id:'B'+S.seq.bk,booking:p.booking,terminal:'TECON Salvador',check:{draft:false,vgm:false,due:false,nf:false},criado:iso(now())},data);S.bookings.push(b);n++;log(b.booking,'Importado da planilha de bookings');}
+    if(b.navio&&!S.cad.navios.includes(b.navio))S.cad.navios.push(b.navio);});}
+  else{ok.forEach(p=>{let c=cByNum(p.num);const b=p.booking?S.bookings.find(x=>x.booking===String(p.booking).trim()):null;
+    if(c){if(p.posicao)c.posicao=String(p.posicao).toUpperCase();if(p.gateIn)c.gateIn=p.gateIn;if(p.tara)c.tara=p.tara;if(p.gateOut&&!c.bookingId){c.status='Devolvido ao armador';}u++;log(c.num,'Atualizado pelo relatório do SISTER');}
+    else{S.seq.c++;c={id:'C'+S.seq.c+Math.random().toString(36).slice(2,4),num:p.num,tipo:p.tipo,armador:p.armador||'—',bookingId:null,status:p.gateOut?'Devolvido ao armador':'Estoque vazio',tara:p.tara||TARA[p.tipo]||null,pesoCarga:null,vgm:null,lacre:'',posicao:String(p.posicao||'').toUpperCase(),gateIn:p.gateIn,obs:p.status?'St.E '+p.status:''};S.containers.push(c);n++;log(c.num,'Gate In importado do SISTER');}
+    if(b&&!c.bookingId&&cOf(b).length<b.qtd){c.bookingId=b.id;if(['Estoque vazio','Aguardando retirada'].includes(c.status))c.status='Vazio no pátio';log(c.num,'Vinculado ao booking '+b.booking+' (importação)');}});}
+  const k=imp.kind;imp={kind:null,parsed:[]};save();toast(`Importação concluída: ${n} novo(s), ${u} atualizado(s)`);go(k==='bk'?'exportacao':'conteineres');}
+
+/* ============ CADASTROS ============ */
+R.cadastros=()=>{const list=(t,arr,k)=>`<section class="panel"><header><h2>${t}</h2><button class="btn sm" data-cad="${k}">+ Adicionar</button></header><div class="pbody"><div class="row">${arr.map(x=>`<span class="tag" style="font-size:12.5px;padding:4px 8px">${H(x)}</span>`).join('')}</div></div></section>`;
+  return `<div class="grid2">${list('Clientes / exportadores',S.cad.clientes,'clientes')}${list('Armadores',S.cad.armadores,'armadores')}${list('Navios',S.cad.navios,'navios')}
+  <section class="panel"><header><h2>Motoristas</h2><button class="btn sm" data-cad="motoristas">+ Adicionar</button></header><div class="tw"><table><thead><tr><th>Nome</th><th>CNH</th><th>Telefone</th><th>OTs abertas</th></tr></thead><tbody>${S.cad.motoristas.map(m=>`<tr><td>${H(m.nome)}</td><td>${H(m.cnh)}</td><td class="num">${H(m.tel)}</td><td class="num">${S.ots.filter(o=>o.motorista===m.nome&&o.status!=='Concluída').length}</td></tr>`).join('')}</tbody></table></div></section>
+  <section class="panel"><header><h2>Veículos</h2><button class="btn sm" data-cad="veiculos">+ Adicionar</button></header><div class="tw"><table><thead><tr><th>Placa</th><th>Tipo</th><th>Situação</th></tr></thead><tbody>${S.cad.veiculos.map(v=>{const em=S.ots.find(o=>(o.cavalo===v.placa||o.carreta===v.placa)&&o.status==='Em rota');return `<tr><td class="mono">${H(v.placa)}</td><td>${H(v.tipo)}</td><td>${em?`<span class="chip info">Em rota · ${H(em.id)}</span>`:'<span class="chip ok">Disponível</span>'}</td></tr>`;}).join('')}</tbody></table></div></section></div>`;};
+function addCad(k){if(k==='motoristas')return form('Novo motorista',[{k:'nome',label:'Nome',req:true},{k:'cnh',label:'Categoria CNH',v:'E'},{k:'tel',label:'Telefone'}],o=>{S.cad.motoristas.push(o);toast('Motorista cadastrado');});
+  if(k==='veiculos')return form('Novo veículo',[{k:'placa',label:'Placa',req:true},{k:'tipo',label:'Tipo',type:'select',opts:['Cavalo','Carreta porta-contêiner 40','Carreta porta-contêiner 20/40','Carreta sider','Truck']}],o=>{o.placa=o.placa.toUpperCase().replace(/[^A-Z0-9]/g,'');S.cad.veiculos.push(o);toast('Veículo cadastrado');});
+  const lab={clientes:'Cliente',armadores:'Armador',navios:'Navio'}[k];form('Novo '+lab.toLowerCase(),[{k:'nome',label:lab,req:true}],o=>{if(S.cad[k].includes(o.nome))return {k:'nome',err:'Já cadastrado'};S.cad[k].push(o.nome);toast(lab+' cadastrado');});}
+
+/* ============ RELATÓRIOS ============ */
+/* Histórico simulado (90 dias) — gerado de forma determinística para o protótipo */
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+let HIST=null;
+function genHist(){
+  const r=rng(1329),day0=Math.floor(now()/DAY)*DAY;
+  const pick=(arr,w)=>{if(!w)return arr[Math.floor(r()*arr.length)];let x=r()*w.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){x-=w[i];if(x<=0)return arr[i];}return arr[arr.length-1];};
+  const nrm=(m,s)=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return m+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+  const ARMW=[45,20,15,12,8];
+  const EXP=[{n:'Cacau Sul Exportadora',e:'Sacaria',q:.9},{n:'Resinas Camaçari S.A.',e:'Big bag',q:.97},{n:'Papel Baiano Ltda',e:'Bobina',q:.95},{n:'Sisal Nordeste Ind.',e:'Fardo',q:.82},{n:'Frutas do Vale S.F.',e:'Palete',q:.93},{n:'Café Chapada Diamantina',e:'Sacaria',q:.88},{n:'Granitos Sul-Baiano',e:'Caixa',q:.96},{n:'Couros Bahia Ltda',e:'Palete',q:.91}];
+  const EXPW=[22,18,14,10,6,12,10,8];
+  const DUR={Sacaria:3.3,'Big bag':1.4,Bobina:1.9,Fardo:2.7,Palete:1.7,Caixa:2.9};
+  const CONF=[{n:'Edvaldo',f:.92},{n:'Joilson',f:1.0},{n:'Marcos Paulo',f:1.12},{n:'Rita',f:.97}];
+  const MOT=['José Carlos Santana','Marcos Vinícius Reis','Antônio Bispo','Rafael Nascimento','Cleiton Souza'];
+  const MOTF={'José Carlos Santana':.6,'Marcos Vinícius Reis':1,'Antônio Bispo':.8,'Rafael Nascimento':1.1,'Cleiton Souza':1.9};
+  const IMP=['Autopeças Recôncavo','Distribuidora Baía Norte','Têxtil Feira de Santana','Eletro Lauro de Freitas'];
+  const bks=[],cnts=[],ots=[],ops=[],occ=[],inv=[];
+  const mkOT=(tipo,agenda,base,sd)=>{const mot=pick(MOT);const late=r()<0.07*MOTF[mot];const delay=late?30+Math.abs(nrm(40,35)):nrm(-4,11);
+    const inFull=r()>0.018;ots.push({tipo,mot,agenda,delay:Math.round(delay),dur:Math.max(25,Math.round(nrm(base,sd))),tat:Math.max(18,Math.round(nrm(47,16)+(r()<.08?45:0))),inFull,onTime:delay<=30});};
+  for(let d=89;d>=0;d--){
+    const dStart=day0-d*DAY;
+    const nb=r()<.35?2:(r()<.8?1:0);
+    for(let k=0;k<nb;k++){
+      const armador=pick(ARM,ARMW),ex=pick(EXP,EXPW),tipo=pick(['40HC','40DV','20DV','40RH'],[50,20,25,5]),qtd=1+Math.floor(r()*5);
+      const dc=dStart+(14+Math.floor(r()*8))*HR,dd=dc-24*HR;
+      const draftLate=r()>ex.q+0.03,vgmLate=r()<(1-ex.q)*0.6;
+      const b={armador,exp:ex.n,tipo,qtd,dc,dd,draftAt:draftLate?dd+(1+r()*10)*HR:dd-(2+r()*40)*HR,vgmLate,teu:TEU(tipo)*qtd,rolados:0,antecedencia:[]};
+      for(let i=0;i<qtd;i++){
+        const late=r()<0.028;const ent=late?dc+(1+r()*8)*HR:dc-(2+r()*36)*HR;
+        const dwell=Math.max(4,nrm(34,18)+(r()<.12?40:0));const ps=ent-dwell*HR;
+        const conf=pick(CONF);const dur=Math.max(.6,DUR[ex.e]*conf.f*(0.85+r()*.35));
+        cnts.push({armador,exp:ex.n,tipo,late,ent,dwell,rolado:late&&r()<.55,dc});
+        if(late&&cnts[cnts.length-1].rolado)b.rolados++;
+        b.antecedencia.push((dc-ent)/HR);
+        ops.push({tipo:'Ovação',t:ps-dur*HR,cliente:ex.n,emb:ex.e,conf:conf.n,dur,vol:Math.round(ex.e==='Big bag'?22:ex.e==='Bobina'?36:ex.e==='Sacaria'?400:ex.e==='Fardo'?160:ex.e==='Caixa'?900:22),m3:TEU(tipo)*28*(.75+r()*.2),avaria:r()<0.012,armador});
+        mkOT('Retirada de vazio',ps-dur*HR-(3+r()*20)*HR,95,30);
+        mkOT('Entrega no terminal',ent-HR,72,22);
+      }
+      mkOT('Coleta de carga no cliente',dd-(10+r()*30)*HR,150,45);
+      bks.push(b);
+    }
+    const nd=r()<.55?(r()<.3?2:1):0;
+    for(let k=0;k<nd;k++){const emb=pick(['Palete','Caixa','Palete','Caixa','Big bag']);const conf=pick(CONF);const dur=Math.max(.6,DUR[emb]*conf.f*(0.8+r()*.4));const cl=pick(IMP);
+      ops.push({tipo:'Desova',t:dStart+(8+r()*8)*HR,cliente:cl,emb,conf:conf.n,dur,vol:emb==='Caixa'?600:30,m3:30+r()*40,avaria:r()<0.015,armador:pick(ARM,ARMW)});
+      mkOT('Devolução de vazio',dStart+(14+r()*20)*HR,85,25);}
+    AREAS.forEach((a,i)=>{const base=[.72,.61,.54][i];occ.push({t:dStart,area:a.id,p:Math.min(.97,Math.max(.25,base+.12*Math.sin((d+i*9)/9)+nrm(0,.03)))});});
+  }
+  [[60,98.4],[30,99.1],[0,99.4]].forEach(([d,v])=>inv.push({t:day0-d*DAY,acc:v+nrm(0,.15),itens:180+Math.floor(r()*60)}));
+  return {bks,cnts,ots:ots.filter(o=>o.agenda<=now()),ops:ops.filter(o=>o.t<=now()),occ,inv};
+}
+let rep={tab:'score',per:90,arm:'',tarifa:2.5};
+const inPer=t=>t>=now()-rep.per*DAY&&t<=now();
+const armOK=a=>!rep.arm||a===rep.arm;
+const pct=(a,b)=>b?a/b:null;
+const fP=v=>v==null?'—':nf(v*100,1)+'%';
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function weeks(){const W=Math.ceil(rep.per/7),e=now(),out=[];for(let i=W-1;i>=0;i--){const b=e-(i+1)*7*DAY,t=e-i*7*DAY;out.push({b,t,l:new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})});}return out;}
+function stClass(v,meta,dir){if(v==null)return '';if(dir==='max')return v>=meta?'ok':v>=meta*0.97?'warn':'crit';if(dir==='min')return v<=meta?'ok':v<=meta*1.15?'warn':'crit';const [lo,hi]=meta;return v>=lo&&v<=hi?'ok':(v<lo-.1||v>hi+.07)?'crit':'warn';}
+/* gráficos */
+function colChart(labels,series,o={}){
+  const W=o.wide?1200:640,CH=o.wide?300:250,L=50,Rr=12,T=16,B=36,iw=W-L-Rr,ih=CH-T-B;
+  const all=series.flatMap(s=>s.vals.filter(v=>v!=null));let mx=o.max!=null?o.max:Math.max(...all,o.target||0)*1.15||1;let mn=o.min||0;
+  const y=v=>T+ih-(v-mn)/(mx-mn)*ih;const n=labels.length,gw=iw/n,bw=Math.min(28,(gw*.72)/series.length);
+  let g='';for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4;g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" class="gl"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" class="ax">${o.pct?nf(v*100)+'%':nf(v,v<10&&mx<10?1:0)}</text>`;}
+  if(o.band){g+=`<rect x="${L}" width="${iw}" y="${y(o.band[1])}" height="${y(o.band[0])-y(o.band[1])}" class="band"/>`;}
+  let bars='';series.forEach((s,si)=>s.vals.forEach((v,i)=>{if(v==null)return;const x=L+gw*i+(gw-bw*series.length)/2+bw*si;const yy=y(Math.max(v,mn));bars+=`<rect x="${x}" y="${yy}" width="${bw-2}" height="${Math.max(0,T+ih-yy)}" rx="2" style="fill:${s.color}"><title>${H(labels[i])} · ${H(s.name)}: ${o.pct?fP(v):nf(v,1)}</title></rect>`;}));
+  let tl='';if(o.target!=null){tl=`<line x1="${L}" x2="${W-Rr}" y1="${y(o.target)}" y2="${y(o.target)}" class="tgt"/><text x="${W-Rr}" y="${y(o.target)-5}" text-anchor="end" class="tgtl">meta ${o.pct?fP(o.target):nf(o.target)}</text>`;}
+  const step=Math.ceil(n/10);let xl='';labels.forEach((l,i)=>{if(i%step)return;xl+=`<text x="${L+gw*i+gw/2}" y="${CH-B+16}" text-anchor="middle" class="ax">${H(l)}</text>`;});
+  const leg=series.length>1||o.target!=null?`<div class="legend" style="margin-top:6px">${series.map(s=>`<span><i style="background:${s.color}"></i>${H(s.name)}</span>`).join('')}${o.target!=null?'<span><i style="background:none;border-top:2px dashed var(--text);height:0;width:14px"></i>Meta</span>':''}${o.band?'<span><i style="background:var(--okSoft)"></i>Faixa ideal</span>':''}</div>`:'';
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${CH}" role="img" aria-label="${H(o.title||'Gráfico')}">${g}${bars}${tl}${xl}</svg>${leg}</div>`;}
+function hbars(rows,o={}){const mx=o.max||Math.max(...rows.map(r=>r.v),0)||1;return `<div class="hb">${rows.map(r=>`<div class="hbr"><span class="hbl">${H(r.l)}</span><span class="hbt"><i style="width:${Math.max(0,Math.min(100,r.v/mx*100))}%;background:${r.c||'var(--accent)'}"></i></span><span class="hbv num">${o.pct?fP(r.v):nf(r.v,o.d||0)}${r.x?` <span class="muted small">${H(r.x)}</span>`:''}</span></div>`).join('')}</div>`;}
+let tblN=0;
+function tbl(head,rows,o={}){const id='rt'+(++tblN);return `<div class="tw"><table id="${id}"><thead><tr>${head.map((h,i)=>`<th class="${o.r&&o.r.includes(i)?'r':''}">${H(h)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${o.r&&o.r.includes(i)?'r num':''}">${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${head.length}" class="empty">Sem dados no período.</td></tr>`}</tbody></table></div><div class="pbody" style="padding-top:8px;padding-bottom:10px"><button class="btn sm" data-copy="${id}">Copiar tabela para Excel</button></div>`;}
+const chipS=(cls,txt)=>`<span class="chip ${cls}">${txt}</span>`;
+function repPanel(t,sub,body,formula){return `<section class="panel"><header><h2>${t}</h2>${sub?`<span class="hint">${sub}</span>`:''}</header>${body}${formula?`<div class="formula"><b>Como calcular:</b> ${formula}</div>`:''}</section>`;}
+function kpiTile(l,v,s,cls){return `<div class="kpi ${cls||''}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s||''}</span></div>`;}
+
+function repData(){
+  if(!HIST)HIST=genHist();
+  const bks=HIST.bks.filter(b=>inPer(b.dc)&&armOK(b.armador)),cnts=HIST.cnts.filter(c=>inPer(c.ent)&&armOK(c.armador)),ops=HIST.ops.filter(o=>inPer(o.t)&&armOK(o.armador)),ots=HIST.ots.filter(o=>inPer(o.agenda));
+  const occ=HIST.occ.filter(o=>inPer(o.t));
+  const ov=ops.filter(o=>o.tipo==='Ovação'),ds=ops.filter(o=>o.tipo==='Desova');
+  const K={
+    draft:pct(bks.filter(b=>b.draftAt<=b.dd).length,bks.length),
+    vgm:pct(bks.filter(b=>!b.vgmLate).length,bks.length),
+    carga:pct(cnts.filter(c=>!c.late).length,cnts.length),
+    rolados:cnts.filter(c=>c.rolado).length,
+    otif:pct(ots.filter(o=>o.onTime&&o.inFull).length,ots.length),
+    tat:avg(ots.map(o=>o.tat)),
+    ovDur:avg(ov.map(o=>o.dur)),
+    ovDia:ov.length/rep.per,
+    dwell:avg(cnts.map(c=>c.dwell)),
+    dwell72:pct(cnts.filter(c=>c.dwell>72).length,cnts.length),
+    occ:avg(occ.map(o=>o.p)),
+    acc:HIST.inv[HIST.inv.length-1].acc/100,
+    avaria:pct(ops.filter(o=>o.avaria).length,ops.length),
+    ft:S.lotes.filter(l=>l.saldo>0&&diasArm(l)>l.freeTime).length,
+  };
+  return {bks,cnts,ops,ots,occ,ov,ds,K};
+}
+const REPTABS=[['score','Scorecard'],['exp','Exportação e deadlines'],['tr','Transporte'],['ovd','Ovação / desova'],['ps','Pré-stacking'],['arm','Armazenagem'],['cli','Clientes e armadores']];
+R.relatorios=()=>{
+  tblN=0;const D=repData(),K=D.K;
+  const head=`<div class="row"><div class="tabs" style="flex:1;border:none">${REPTABS.map(([k,l])=>`<button class="${rep.tab===k?'on':''}" data-rtab="${k}">${l}</button>`).join('')}</div>
+    <select id="rper" style="max-width:150px" aria-label="Período">${[30,60,90].map(p=>`<option value="${p}" ${rep.per===p?'selected':''}>Últimos ${p} dias</option>`).join('')}</select>
+    <select id="rarm" style="max-width:170px" aria-label="Armador"><option value="">Todos os armadores</option>${ARM.map(a=>`<option ${rep.arm===a?'selected':''}>${a}</option>`).join('')}</select></div>
+    <div class="demo" style="border:1px solid var(--line);border-radius:6px">Relatórios calculados sobre um <b>histórico simulado de 90 dias</b> para demonstrar as análises. Esta versão ainda mostra dados de demonstração nos gráficos históricos; estoque atual e free time já usam os dados reais do sistema.</div>`;
+  return head+(RT[rep.tab]||RT.score)(D,K);
+};
+const RT={};
+RT.score=(D,K)=>{
+  const rows=[
+    ['Exportação','Draft entregue no prazo',K.draft,.95,'max','fP','Bookings com draft enviado até o deadline ÷ bookings'],
+    ['Exportação','VGM informado no prazo',K.vgm,.98,'max','fP','Bookings com VGM no prazo ÷ bookings (exigência SOLAS)'],
+    ['Exportação','Contêineres no terminal antes do deadline de carga',K.carga,.98,'max','fP','Cntrs entregues até o deadline de carga ÷ cntrs'],
+    ['Transporte','OTIF (no prazo e completo)',K.otif,.95,'max','fP','OTs no horário (até 30 min) e sem ocorrência ÷ OTs'],
+    ['Transporte','Turnaround do caminhão no pátio',K.tat,60,'min','min','Média de (gate out − gate in) do caminhão'],
+    ['Ovação','Tempo médio de ovação por contêiner',K.ovDur,2.5,'min','h','Média de (fim − início) das ovações'],
+    ['Pré-stacking','Dwell time médio no pré-stacking',K.dwell,48,'min','h','Média de (saída p/ terminal − entrada no pré-stacking)'],
+    ['Armazenagem','Ocupação média dos armazéns',K.occ,[.7,.85],'band','fP','m³ ocupados ÷ capacidade (faixa ideal 70–85%)'],
+    ['Armazenagem','Acuracidade do inventário',K.acc,.99,'max','fP','Posições sem divergência ÷ posições inventariadas'],
+    ['Qualidade','Operações com avaria',K.avaria,.005,'min','fP','Ovações/desovas com avaria registrada ÷ operações'],
+  ];
+  const fmt=(v,f)=>v==null?'—':f==='fP'?fP(v):f==='min'?nf(v)+' min':nf(v,1)+' h';
+  const metaTxt=(m,dir,f)=>dir==='band'?`${fP(m[0])} a ${fP(m[1])}`:(dir==='max'?'≥ ':'≤ ')+fmt(m,f);
+  const tiles=rows.map(([a,n,v,m,dir,f])=>{const c=stClass(v,m,dir);return `<div class="sc ${c}"><span class="l">${a}</span><b>${n}</b><span class="v">${fmt(v,f)}</span><span class="s">Meta ${metaTxt(m,dir,f)} ${chipS(c,c==='ok'?'Dentro da meta':c==='warn'?'Atenção':'Fora da meta')}</span></div>`;}).join('');
+  return `<section class="scgrid">${tiles}</section>`+repPanel('Tabela de indicadores','Metas de referência de mercado, ajustáveis à realidade da Ziran',
+    tbl(['Área','Indicador','Resultado','Meta','Situação','Fórmula'],rows.map(([a,n,v,m,dir,f,fo])=>{const c=stClass(v,m,dir);return [H(a),`<b>${H(n)}</b>`,fmt(v,f),metaTxt(m,dir,f),chipS(c,c==='ok'?'Dentro':c==='warn'?'Atenção':'Fora'),`<span class="small muted">${H(fo)}</span>`];}),{r:[2]}));
+};
+RT.exp=(D,K)=>{
+  const W=weeks();
+  const wk=W.map(w=>{const c=D.cnts.filter(x=>x.ent>=w.b&&x.ent<w.t);return pct(c.filter(x=>!x.late).length,c.length);});
+  const wd=W.map(w=>{const b=D.bks.filter(x=>x.dc>=w.b&&x.dc<w.t);return pct(b.filter(x=>x.draftAt<=x.dd).length,b.length);});
+  const byA=ARM.map(a=>{const b=D.bks.filter(x=>x.armador===a),c=D.cnts.filter(x=>x.armador===a);return {a,b,c};}).filter(x=>x.b.length);
+  const byE=[...new Set(D.bks.map(b=>b.exp))].map(e=>{const b=D.bks.filter(x=>x.exp===e);const dl=b.filter(x=>x.draftAt>x.dd);return {e,n:b.length,dl:dl.length,atraso:avg(dl.map(x=>(x.draftAt-x.dd)/HR)),vgm:b.filter(x=>x.vgmLate).length};}).sort((a,b)=>b.dl/b.n-a.dl/a.n);
+  const ant=D.cnts.map(c=>(c.dc-c.ent)/HR);
+  const fx=[['Atrasado',x=>x<0],['0–6 h',x=>x>=0&&x<6],['6–12 h',x=>x>=6&&x<12],['12–24 h',x=>x>=12&&x<24],['> 24 h',x=>x>=24]];
+  return `<section class="kpis">${kpiTile('Draft no prazo',fP(K.draft),`${D.bks.length} bookings · meta 95%`,stClass(K.draft,.95,'max')==='ok'?'':'warn')}${kpiTile('VGM no prazo',fP(K.vgm),'meta 98%',stClass(K.vgm,.98,'max')==='ok'?'':'warn')}${kpiTile('Carga antes do deadline',fP(K.carga),`${D.cnts.length} contêineres · meta 98%`,stClass(K.carga,.98,'max')==='crit'?'crit':'')}${kpiTile('Contêineres rolados',K.rolados,'perderam o navio por atraso',K.rolados?'crit':'')}</section>
+  <div class="grid2">${repPanel('Cumprimento do deadline de carga por semana','% de contêineres entregues no terminal dentro do prazo',colChart(W.map(w=>w.l),[{name:'Carga no prazo',vals:wk,color:'var(--accent)'},{name:'Draft no prazo',vals:wd,color:'var(--steel)'}],{pct:true,max:1,min:.7,target:.98}),'contêineres entregues até o deadline ÷ contêineres com deadline na semana')}
+  ${repPanel('Antecedência de entrega no terminal','Quanto antes do deadline de carga o contêiner chegou',hbars(fx.map(([l,f],i)=>({l,v:ant.filter(f).length,c:i===0?'var(--crit)':i===1?'var(--warn)':'var(--accent)'})),{})+`<div class="pbody small muted" style="padding-top:0">Entregas com menos de 6 h de folga são risco de rolagem se houver fila no gate do terminal.</div>`,'deadline de carga − hora de entrada no terminal')}</div>
+  ${repPanel('Desempenho por armador','',tbl(['Armador','Bookings','Contêineres','TEU','Draft no prazo','VGM no prazo','Carga no prazo','Rolados','Antecedência média'],byA.map(({a,b,c})=>{const d=pct(b.filter(x=>x.draftAt<=x.dd).length,b.length),v=pct(b.filter(x=>!x.vgmLate).length,b.length),k=pct(c.filter(x=>!x.late).length,c.length);return [`<b>${a}</b>`,b.length,c.length,nf(c.reduce((s,x)=>s+TEU(x.tipo),0)),chipS(stClass(d,.95,'max'),fP(d)),chipS(stClass(v,.98,'max'),fP(v)),chipS(stClass(k,.98,'max'),fP(k)),c.filter(x=>x.rolado).length,nf(avg(c.map(x=>(x.dc-x.ent)/HR)),1)+' h'];}),{r:[1,2,3,7,8]}))}
+  ${repPanel('Exportadores que atrasam documentação','Base para cobrar o cliente e antecipar o follow-up do draft',tbl(['Exportador','Bookings','Drafts atrasados','% atrasado','Atraso médio','VGM atrasado'],byE.map(e=>[`<b>${H(e.e)}</b>`,e.n,e.dl,chipS(stClass(1-e.dl/e.n,.95,'max'),fP(e.dl/e.n)),e.atraso?nf(e.atraso,1)+' h':'—',e.vgm]),{r:[1,2,4,5]}))}`;
+};
+RT.tr=(D,K)=>{
+  const W=weeks();const wk=W.map(w=>{const o=D.ots.filter(x=>x.agenda>=w.b&&x.agenda<w.t);return pct(o.filter(x=>x.onTime&&x.inFull).length,o.length);});
+  const mots=[...new Set(D.ots.map(o=>o.mot))].map(m=>{const o=D.ots.filter(x=>x.mot===m);return {m,n:o.length,otif:pct(o.filter(x=>x.onTime&&x.inFull).length,o.length),atr:avg(o.filter(x=>!x.onTime).map(x=>x.delay)),dur:avg(o.map(x=>x.dur)),oc:o.filter(x=>!x.inFull).length};}).sort((a,b)=>a.otif-b.otif);
+  const tipos=[...new Set(D.ots.map(o=>o.tipo))].map(t=>{const o=D.ots.filter(x=>x.tipo===t);return {t,n:o.length,otif:pct(o.filter(x=>x.onTime&&x.inFull).length,o.length),dur:avg(o.map(x=>x.dur))};});
+  const tf=[['até 30 min',x=>x<=30],['30–60 min',x=>x>30&&x<=60],['60–90 min',x=>x>60&&x<=90],['> 90 min',x=>x>90]];
+  return `<section class="kpis">${kpiTile('OTIF',fP(K.otif),`${D.ots.length} viagens · meta 95%`,stClass(K.otif,.95,'max')==='ok'?'':'warn')}${kpiTile('Pontualidade',fP(pct(D.ots.filter(o=>o.onTime).length,D.ots.length)),'chegada até 30 min do agendado')}${kpiTile('Turnaround no pátio',nf(K.tat)+' min','gate in → gate out · meta ≤ 60')}${kpiTile('Viagens por dia',nf(D.ots.length/rep.per,1),'média do período')}</section>
+  <div class="grid2">${repPanel('OTIF por semana','',colChart(W.map(w=>w.l),[{name:'OTIF',vals:wk,color:'var(--accent)'}],{pct:true,max:1,min:.7,target:.95}),'viagens no horário E sem ocorrência (avaria, documento, carga incompleta) ÷ viagens')}
+  ${repPanel('Tempo do caminhão no pátio (turnaround)','Referência de mercado: 30 a 60 min do gate in ao gate out',hbars(tf.map(([l,f],i)=>({l,v:D.ots.filter(o=>f(o.tat)).length,c:i<2?'var(--accent)':i===2?'var(--warn)':'var(--crit)'}))),'gate out − gate in do caminhão (motorista aguardando)')}</div>
+  ${repPanel('Desempenho por motorista','Ordenado do menor para o maior OTIF',tbl(['Motorista','Viagens','OTIF','Atraso médio quando atrasa','Duração média da viagem','Ocorrências'],mots.map(m=>[`<b>${H(m.m)}</b>`,m.n,chipS(stClass(m.otif,.95,'max'),fP(m.otif)),m.atr?nf(m.atr)+' min':'—',nf(m.dur)+' min',m.oc]),{r:[1,3,4,5]}))}
+  ${repPanel('Por tipo de ordem de transporte','',tbl(['Tipo','Viagens','OTIF','Duração média'],tipos.map(t=>[H(t.t),t.n,chipS(stClass(t.otif,.95,'max'),fP(t.otif)),nf(t.dur)+' min']),{r:[1,3]}))}`;
+};
+RT.ovd=(D,K)=>{
+  const W=weeks();const ovW=W.map(w=>D.ov.filter(x=>x.t>=w.b&&x.t<w.t).length),dsW=W.map(w=>D.ds.filter(x=>x.t>=w.b&&x.t<w.t).length);
+  const byEmb=[...new Set(D.ops.map(o=>o.emb))].map(e=>{const o=D.ops.filter(x=>x.emb===e);return {e,n:o.length,dur:avg(o.map(x=>x.dur)),vol:avg(o.map(x=>x.vol))};}).sort((a,b)=>b.dur-a.dur);
+  const med=avg(D.ops.map(o=>o.dur));
+  const byC=[...new Set(D.ops.map(o=>o.conf))].map(c=>{const o=D.ops.filter(x=>x.conf===c);const d=avg(o.map(x=>x.dur));return {c,n:o.length,d,dv:d/med-1,av:o.filter(x=>x.avaria).length};}).sort((a,b)=>a.d-b.d);
+  return `<section class="kpis">${kpiTile('Ovações',nf(D.ov.length),`${nf(K.ovDia,1)} por dia`)}${kpiTile('Desovas',nf(D.ds.length),`${nf(D.ds.length/rep.per,1)} por dia`)}${kpiTile('Tempo médio de ovação',nf(K.ovDur,1)+' h','por contêiner')}${kpiTile('Avarias',fP(K.avaria),'das operações · meta ≤ 0,5%',stClass(K.avaria,.005,'min')==='ok'?'':'warn')}</section>
+  ${repPanel('Volume semanal de ovação e desova','Contêineres por semana',colChart(W.map(w=>w.l),[{name:'Ovação',vals:ovW,color:'var(--accent)'},{name:'Desova',vals:dsW,color:'var(--steel)'}],{wide:true}),'contagem de ordens concluídas na semana')}
+  <div class="grid2">${repPanel('Tempo por tipo de embalagem','Base para dimensionar equipe e cobrar por tipo de carga',tbl(['Embalagem','Operações','Tempo médio','Volumes médios'],byEmb.map(e=>[`<b>${H(e.e)}</b>`,e.n,nf(e.dur,1)+' h',nf(e.vol)]),{r:[1,2,3]}))}
+  ${repPanel('Produtividade por conferente','Desvio em relação ao tempo médio da equipe',tbl(['Conferente','Operações','Tempo médio','Desvio','Avarias'],byC.map(c=>[`<b>${H(c.c)}</b>`,c.n,nf(c.d,1)+' h',chipS(c.dv<=0?'ok':c.dv<.08?'warn':'crit',(c.dv>0?'+':'')+nf(c.dv*100,1)+'%'),c.av]),{r:[1,2,4]}))}</div>`;
+};
+RT.ps=(D,K)=>{
+  const fx=[['até 24 h',x=>x<=24],['24–48 h',x=>x>24&&x<=48],['48–72 h',x=>x>48&&x<=72],['> 72 h',x=>x>72]];
+  const byA=ARM.map(a=>{const c=D.cnts.filter(x=>x.armador===a);return {a,n:c.length,d:avg(c.map(x=>x.dwell)),p72:pct(c.filter(x=>x.dwell>72).length,c.length)};}).filter(x=>x.n);
+  const W=weeks();const dw=W.map(w=>avg(D.cnts.filter(x=>x.ent>=w.b&&x.ent<w.t).map(x=>x.dwell)));
+  const live=S.containers.filter(c=>c.status==='Pré-stacking');
+  return `<section class="kpis">${kpiTile('Dwell time médio',nf(K.dwell,1)+' h','entrada no pré-stacking → terminal · meta ≤ 48 h',stClass(K.dwell,48,'min')==='ok'?'':'warn')}${kpiTile('Acima de 72 h',fP(K.dwell72),'contêineres parados demais')}${kpiTile('Ocupação agora',live.reduce((a,c)=>a+TEU(c.tipo),0)+' TEU',`${live.length} contêineres no pré-stacking`)}${kpiTile('Movimentos no período',nf(D.cnts.length*2),'entradas + saídas do pré-stacking')}</section>
+  <div class="grid2">${repPanel('Distribuição do dwell time','Tempo que o contêiner cheio ficou no pré-stacking',hbars(fx.map(([l,f],i)=>({l,v:D.cnts.filter(c=>f(c.dwell)).length,c:i<2?'var(--accent)':i===2?'var(--warn)':'var(--crit)'}))),'saída para o terminal − entrada no pré-stacking')}
+  ${repPanel('Dwell time médio por semana','Horas',colChart(W.map(w=>w.l),[{name:'Dwell médio (h)',vals:dw,color:'var(--accent)'}],{target:48}),'média semanal do dwell time')}</div>
+  ${repPanel('Dwell time por armador','Armadores com dwell alto ocupam posição por mais tempo',tbl(['Armador','Contêineres','Dwell médio','Acima de 72 h'],byA.map(x=>[`<b>${x.a}</b>`,x.n,chipS(stClass(x.d,48,'min'),nf(x.d,1)+' h'),fP(x.p72)]),{r:[1,3]}))}`;
+};
+RT.arm=(D,K)=>{
+  const W=weeks();const oc=AREAS.map(a=>({name:a.nome,vals:W.map(w=>avg(D.occ.filter(o=>o.area===a.id&&o.t>=w.b&&o.t<w.t).map(o=>o.p)))}));
+  const cols=['var(--accent)','var(--ink)','var(--steel)'];
+  const L=S.lotes.filter(l=>l.saldo>0);
+  const ag=[['0–7 dias',x=>x<=7],['8–15 dias',x=>x>7&&x<=15],['16–30 dias',x=>x>15&&x<=30],['> 30 dias',x=>x>30]];
+  const exc=L.map(l=>{const d=diasArm(l),e=d-l.freeTime,m3=l.m3*(l.saldo/l.volumes);return {l,d,e,m3,val:e>0?e*m3*rep.tarifa:0};}).filter(x=>x.e>0).sort((a,b)=>b.val-a.val);
+  return `<section class="kpis">${kpiTile('Ocupação média',fP(K.occ),'faixa ideal 70–85%')}${kpiTile('Pico no período',fP(Math.max(...D.occ.map(o=>o.p))),'maior ocupação diária de uma área')}${kpiTile('Acuracidade do inventário',fP(K.acc),'último inventário · meta ≥ 99%',stClass(K.acc,.99,'max')==='ok'?'':'warn')}${kpiTile('Lotes acima do free time',K.ft,'estoque atual',K.ft?'crit':'')}</section>
+  ${repPanel('Ocupação semanal por área','% da capacidade em m³ · faixa verde = 70 a 85%',colChart(W.map(w=>w.l),oc.map((s,i)=>Object.assign(s,{color:cols[i]})),{pct:true,max:1,min:0,band:[.7,.85],wide:true}),'m³ ocupados ÷ capacidade da área (média dos dias da semana)')}
+  <div class="grid2">${repPanel('Aging do estoque atual','Lotes por tempo de armazenagem',hbars(ag.map(([l,f],i)=>({l,v:L.filter(x=>f(diasArm(x))).length,c:i<2?'var(--accent)':i===2?'var(--warn)':'var(--crit)',x:'lotes · '+nf(L.filter(x=>f(diasArm(x))).reduce((s,x)=>s+x.m3*(x.saldo/x.volumes),0))+' m³'}))),'hoje − data de entrada do lote')}
+  ${repPanel('Acuracidade do inventário','Contagem cíclica mensal',tbl(['Data','Posições contadas','Acuracidade'],HIST.inv.map(i=>[fmtD(i.t),i.itens,chipS(stClass(i.acc/100,.99,'max'),fP(i.acc/100))]),{r:[1]}),'posições sem divergência ÷ posições contadas')}</div>
+  ${repPanel('Armazenagem excedente a faturar','Lotes em estoque que passaram do free time',`<div class="pbody row small" style="padding-bottom:0"><label for="rtar">Tarifa de exemplo (R$ por m³ por dia excedente)</label><input id="rtar" type="number" step="0.1" value="${rep.tarifa}" style="max-width:110px"><span class="muted">Ajuste para a tabela comercial da Ziran</span></div>`+
+    tbl(['Lote','Cliente','Descrição','Dias armazenados','Free time','Dias excedentes','m³ em estoque','Valor estimado'],exc.map(x=>[`<span class="mono">${x.l.id}</span>`,H(x.l.cliente),H(x.l.descricao),x.d,x.l.freeTime,`<b class="bad">${x.e}</b>`,nf(x.m3,1),'R$ '+nf(x.val,2)]),{r:[3,4,5,6,7]})+`<div class="pbody"><b>Total estimado: R$ ${nf(exc.reduce((s,x)=>s+x.val,0),2)}</b></div>`,'dias excedentes × m³ em estoque × tarifa')}`;
+};
+RT.cli=(D,K)=>{
+  const byA=ARM.map(a=>{const c=D.cnts.filter(x=>x.armador===a),o=D.ops.filter(x=>x.armador===a);return {a,teu:c.reduce((s,x)=>s+TEU(x.tipo),0),ov:o.filter(x=>x.tipo==='Ovação').length,ds:o.filter(x=>x.tipo==='Desova').length};}).filter(x=>x.teu||x.ov||x.ds).sort((a,b)=>b.teu-a.teu);
+  const tt=byA.reduce((s,x)=>s+x.teu,0);
+  const cl={};D.ops.forEach(o=>{cl[o.cliente]=(cl[o.cliente]||0)+o.m3;});
+  const arr=Object.entries(cl).sort((a,b)=>b[1]-a[1]);const tot=arr.reduce((s,x)=>s+x[1],0);let acc=0;
+  const abc=arr.map(([c,v])=>{acc+=v;const p=acc/tot;return [c,v,v/tot,p,p<=.8?'A':p<=.95?'B':'C'];});
+  return `<div class="grid2">${repPanel('Participação por armador','TEU exportados no período',hbars(byA.map(x=>({l:x.a,v:x.teu,x:fP(x.teu/tt)}))),'soma de TEU dos contêineres entregues no terminal')}
+  ${repPanel('Operações por armador','',tbl(['Armador','TEU exportado','Ovações','Desovas','Participação'],byA.map(x=>[`<b>${x.a}</b>`,nf(x.teu),x.ov,x.ds,fP(x.teu/tt)]),{r:[1,2,3,4]}))}</div>
+  ${repPanel('Curva ABC de clientes','Por m³ movimentado em ovação e desova · A = 80% do volume, B = próximos 15%, C = restante',tbl(['Cliente','m³ movimentados','% do total','% acumulado','Classe'],abc.map(([c,v,p,pa,k])=>[`<b>${H(c)}</b>`,nf(v),fP(p),fP(pa),chipS(k==='A'?'ok':k==='B'?'warn':'',k)]),{r:[1,2,3]}),'ordenar clientes por volume, acumular a participação e classificar')}`;
+};
+
+/* ============ ONLINE: Firebase (login, perfis e banco de dados) ============ */
+const EMPTY=()=>({v:1,bookings:[],containers:[],ots:[],lotes:[],ops:[],log:[],cad:{clientes:[],armadores:ARM.slice(),navios:[],motoristas:[],veiculos:[]},seq:{ot:0,ov:0,ds:0,lote:0,bk:0,c:0}});
+S=EMPTY();
+const COLS=['bookings','containers','ots','lotes','ops','log'];
+const PERFIS={admin:'Administrador',supervisor:'Supervisor',operador:'Operador'};
+let known={},knownMeta={},ME=null,USER=null,unsub=[],unsubMe=null,usersList=[],loadedSet=new Set(),inApp=false,pendingName='';
+const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const strip=o=>JSON.stringify(o,(k,v)=>(k==='_by'||k==='_at')?undefined:v);
+const clean=o=>JSON.parse(JSON.stringify(o));
+let db=null,auth=null;
+try{if(window.firebase&&window.FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/COLE/i.test(FIREBASE_CONFIG.apiKey)){firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();auth.languageCode='pt';db=firebase.firestore();}}catch(e){console.error(e);}
+function fbErr(e){console.error(e);if(e&&e.code==='permission-denied')toast('Sem permissão para acessar estes dados. Confira se o usuário está ativo e se as regras do Firestore foram publicadas.');else toast('Erro de conexão com o banco: '+(e&&e.message||e));}
+function setSync(t){const el=$('#sync');if(el)el.textContent=t||(navigator.onLine?'Sincronizado':'Sem internet: alterações serão enviadas quando voltar');}
+window.addEventListener('online',()=>setSync());window.addEventListener('offline',()=>setSync());
+function save(){
+  if(!db||!ME||ME.status!=='ativo')return;
+  const ops=[],who=USER.email,at=iso(now());
+  COLS.forEach(col=>{const cur=new Map();(S[col]||[]).forEach(o=>{if(!o._k)o._k=rid();const j=strip(o);cur.set(o._k,j);if(!known[col]||known[col].get(o._k)!==j)ops.push({t:'set',col,k:o._k,d:Object.assign(clean(o),{_by:who,_at:at})});});
+    if(known[col])known[col].forEach((j,k)=>{if(!cur.has(k))ops.push({t:'del',col,k});});known[col]=cur;});
+  ['cad','seq'].forEach(m=>{const j=JSON.stringify(S[m]);if(knownMeta[m]!==j){knownMeta[m]=j;ops.push({t:'set',col:'meta',k:m,d:clean(S[m])});}});
+  if(!ops.length)return;
+  setSync('Salvando…');
+  const chunks=[];for(let i=0;i<ops.length;i+=400)chunks.push(ops.slice(i,i+400));
+  Promise.all(chunks.map(ch=>{const b=db.batch();ch.forEach(o=>{const ref=db.collection(o.col).doc(o.k);o.t==='del'?b.delete(ref):b.set(ref,o.d);});return b.commit();}))
+    .then(()=>setSync()).catch(err=>{console.error(err);setSync('Erro ao salvar');toast('Não foi possível salvar: '+(err.code==='permission-denied'?'seu perfil não tem permissão para esta ação':err.message));});
+}
+let srT;function softRender(){clearTimeout(srT);srT=setTimeout(()=>{if(!inApp)return;const ae=document.activeElement;if(ae&&ae.closest&&ae.closest('#view')&&ae.matches('input,select,textarea')){softRender();return;}render();if(drawerFn)paintDrawer();},250);}
+function stopListen(){unsub.forEach(u=>{try{u();}catch(e){}});unsub=[];loadedSet=new Set();}
+function loaded(k){const first=loadedSet.size<8;loadedSet.add(k);if(loadedSet.size>=8&&first){const h0=(location.hash||'').slice(1);go(VIEWS.find(v=>v.id===h0&&allowed(v))?h0:'painel');}else if(loadedSet.size>=8)softRender();}
+function listen(){
+  stopListen();
+  COLS.forEach(col=>{let q=db.collection(col);if(col==='log')q=q.orderBy('ts','desc').limit(800);
+    unsub.push(q.onSnapshot(qs=>{const old=new Map((S[col]||[]).map(o=>[o._k,o]));const arr=[],kn=new Map();
+      qs.forEach(d=>{const data=d.data();data._k=d.id;let o=old.get(d.id);if(o){Object.keys(o).forEach(k=>{if(!(k in data))delete o[k];});Object.assign(o,data);}else o=data;arr.push(o);kn.set(d.id,strip(o));});
+      S[col]=arr;known[col]=kn;loaded(col);},fbErr));});
+  ['cad','seq'].forEach(m=>unsub.push(db.collection('meta').doc(m).onSnapshot(s=>{if(s.exists){const d=s.data();S[m]=m==='cad'?Object.assign(EMPTY().cad,d):Object.assign(EMPTY().seq,d);}knownMeta[m]=JSON.stringify(S[m]);loaded('meta_'+m);},fbErr)));
+  if(ME.perfil==='admin')unsub.push(db.collection('users').onSnapshot(qs=>{usersList=qs.docs.map(d=>Object.assign({uid:d.id},d.data()));if(cur==='usuarios')softRender();},fbErr));
+}
+/* perfis */
+const ROLES={importar:['admin','supervisor'],cadastros:['admin','supervisor'],usuarios:['admin']};
+const allowed=v=>{const r=ROLES[v.id||v];return !r||(ME&&r.includes(ME.perfil));};
+/* telas de acesso */
+const AUTH=$('#auth');
+const AERR={'auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.','auth/user-not-found':'E-mail ou senha incorretos.','auth/invalid-login-credentials':'E-mail ou senha incorretos.','auth/email-already-in-use':'Já existe uma conta com este e-mail. Use “Entrar” ou “Esqueci a senha”.','auth/weak-password':'A senha precisa ter pelo menos 6 caracteres.','auth/invalid-email':'E-mail inválido.','auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos e tente de novo.','auth/network-request-failed':'Sem conexão com a internet.','auth/operation-not-allowed':'Login por e-mail e senha não está ativado no Firebase (veja o passo a passo).','auth/unauthorized-domain':'Este endereço não está autorizado no Firebase (Authentication › Configurações › Domínios autorizados).'};
+const aerr=e=>AERR[e&&e.code]||('Erro: '+(e&&e.message||e));
+function showAuth(mode,msg){
+  inApp=false;document.body.classList.add('locked');AUTH.hidden=false;
+  const logo=$('.brand img').getAttribute('src');
+  const card=inner=>`<div class="acard"><img src="${logo}" alt="Ziran" class="alogo"><div class="asub">Sistema de logística</div>${inner}</div>`;
+  const m=msg?`<div class="amsg ${/sucesso|enviado|criada/i.test(msg)?'ok':''}">${H(msg)}</div>`:'';
+  let h='';
+  if(mode==='config')h=card(`<h2>Falta configurar o Firebase</h2><p>Abra o arquivo <b>firebase-config.js</b> no GitHub e cole os dados do seu projeto Firebase (passo 4 do guia).</p>`);
+  else if(mode==='loading')h=card(`<p class="muted">Conectando…</p>`);
+  else if(mode==='login')h=card(`<h2>Entrar</h2>${m}<form id="fLogin" class="aform"><label>E-mail<input type="email" id="aEmail" autocomplete="username" required></label><label>Senha<input type="password" id="aPass" autocomplete="current-password" required></label><button class="btn pri" type="submit">Entrar</button></form>
+    <div class="alinks"><button type="button" class="lnk" data-amode="cadastro">Criar conta</button><button type="button" class="lnk" data-amode="esqueci">Esqueci a senha</button></div>`);
+  else if(mode==='cadastro')h=card(`<h2>Criar conta</h2>${m}<p class="muted small">Depois de criar, um administrador precisa aprovar o seu acesso.</p><form id="fCad" class="aform"><label>Nome completo<input type="text" id="aNome" required></label><label>E-mail<input type="email" id="aEmail" autocomplete="username" required></label><label>Senha (mínimo 6 caracteres)<input type="password" id="aPass" autocomplete="new-password" minlength="6" required></label><button class="btn pri" type="submit">Criar conta</button></form>
+    <div class="alinks"><button type="button" class="lnk" data-amode="login">Já tenho conta</button></div>`);
+  else if(mode==='esqueci')h=card(`<h2>Recuperar senha</h2>${m}<form id="fEsq" class="aform"><label>E-mail<input type="email" id="aEmail" required></label><button class="btn pri" type="submit">Enviar link por e-mail</button></form><div class="alinks"><button type="button" class="lnk" data-amode="login">Voltar</button></div>`);
+  else if(mode==='pendente')h=card(`<h2>Aguardando aprovação</h2><p>Sua conta <b>${H(USER&&USER.email)}</b> foi criada. Peça a um administrador para liberar o acesso em <b>Usuários</b>. Esta tela abre o sistema sozinha quando for aprovada.</p><div class="alinks"><button type="button" class="lnk" data-alogout>Sair</button></div>`);
+  else if(mode==='inativo')h=card(`<h2>Acesso bloqueado</h2><p>O usuário <b>${H(USER&&USER.email)}</b> está inativo. Fale com o administrador do sistema.</p><div class="alinks"><button type="button" class="lnk" data-alogout>Sair</button></div>`);
+  else h=card(`<h2>Não foi possível entrar</h2>${m}<div class="alinks"><button type="button" class="lnk" data-alogout>Sair</button></div>`);
+  AUTH.innerHTML=h;const f=AUTH.querySelector('input');if(f)f.focus();
+}
+AUTH.addEventListener('click',e=>{const b=e.target.closest('[data-amode]');if(b){showAuth(b.dataset.amode);return;}if(e.target.closest('[data-alogout]'))auth.signOut();});
+AUTH.addEventListener('submit',async e=>{e.preventDefault();const f=e.target;const email=(AUTH.querySelector('#aEmail')||{}).value,pass=(AUTH.querySelector('#aPass')||{}).value;const btn=f.querySelector('button[type=submit]');btn.disabled=true;
+  try{if(f.id==='fLogin')await auth.signInWithEmailAndPassword(email.trim(),pass);
+    else if(f.id==='fCad'){pendingName=AUTH.querySelector('#aNome').value.trim();const c=await auth.createUserWithEmailAndPassword(email.trim(),pass);try{await c.user.updateProfile({displayName:pendingName});}catch(_){}}
+    else if(f.id==='fEsq'){await auth.sendPasswordResetEmail(email.trim());showAuth('login','Link de recuperação enviado para '+email+'. Confira também a caixa de spam.');return;}
+  }catch(err){const mode=f.id==='fLogin'?'login':f.id==='fCad'?'cadastro':'esqueci';showAuth(mode,aerr(err));const i=AUTH.querySelector('#aEmail');if(i)i.value=email;}
+  finally{btn.disabled=false;}});
+function enterApp(){
+  inApp=true;document.body.classList.remove('locked');AUTH.hidden=true;AUTH.innerHTML='';
+  $('#who').innerHTML=`<b>${H(ME.nome||USER.email)}</b><span>${H(PERFIS[ME.perfil]||ME.perfil)}</span>`;
+  $('#view').innerHTML='<div class="empty">Carregando dados…</div>';
+  setSync();listen();
+  db.collection('users').doc(USER.uid).update({ultimoAcesso:iso(now())}).catch(()=>{});
+}
+function leaveApp(){stopListen();inApp=false;closeAll();S=EMPTY();known={};knownMeta={};usersList=[];}
+if(!auth){showAuth('config');}
+else{showAuth('loading');}
+if(auth)auth.onAuthStateChanged(u=>{
+  if(unsubMe){unsubMe();unsubMe=null;}leaveApp();USER=u;ME=null;
+  if(!u){showAuth('login');return;}
+  showAuth('loading');
+  const ref=db.collection('users').doc(u.uid);
+  unsubMe=ref.onSnapshot(s=>{
+    if(!s.exists){ref.set({nome:pendingName||u.displayName||u.email,email:u.email,perfil:'operador',status:'pendente',criado:iso(now())}).catch(e=>showAuth('erro',e.code==='permission-denied'?'O banco recusou o cadastro. Confira se as regras do Firestore foram publicadas (passo 6 do guia).':e.message));return;}
+    const d=s.data(),was=ME&&ME.status,wasP=ME&&ME.perfil;ME=Object.assign({uid:u.uid},d);
+    if(d.status==='ativo'){if(was!=='ativo')enterApp();else if(wasP!==d.perfil){listen();$('#who span').textContent=PERFIS[d.perfil]||d.perfil;}}
+    else{leaveApp();showAuth(d.status==='inativo'?'inativo':'pendente');}
+  },e=>showAuth('erro',e.code==='permission-denied'?'Sem permissão para ler o seu cadastro. Confira as regras do Firestore (passo 6 do guia).':e.message));
+});
+$('#logout').addEventListener('click',()=>auth&&auth.signOut());
+
+/* ============ USUÁRIOS (admin) ============ */
+let armedDel=false;
+R.usuarios=()=>{
+  const L=usersList.slice().sort((a,b)=>(a.status==='pendente'?0:1)-(b.status==='pendente'?0:1)||String(a.nome).localeCompare(b.nome));
+  const pend=L.filter(u=>u.status==='pendente').length;
+  const vazio=!S.bookings.length&&!S.containers.length&&!S.ots.length;
+  return `<section class="panel"><header><h2>Usuários</h2>${pend?`<span class="chip warn">${pend} aguardando aprovação</span>`:''}<button class="btn pri" data-act="novoUser">+ Criar usuário</button></header>
+  <div class="tw"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th>Último acesso</th><th>Criado em</th></tr></thead><tbody>
+  ${L.map(u=>{const self=u.uid===ME.uid;return `<tr><td><b>${H(u.nome)}</b>${self?' <span class="tag">você</span>':''}</td><td>${H(u.email)}</td>
+    <td><select data-uperfil="${u.uid}" ${self?'disabled':''} aria-label="Perfil de ${H(u.nome)}">${Object.entries(PERFIS).map(([k,l])=>`<option value="${k}" ${u.perfil===k?'selected':''}>${l}</option>`).join('')}</select></td>
+    <td><select data-ustatus="${u.uid}" ${self?'disabled':''} aria-label="Situação de ${H(u.nome)}">${[['pendente','Pendente'],['ativo','Ativo'],['inativo','Inativo']].map(([k,l])=>`<option value="${k}" ${u.status===k?'selected':''}>${l}</option>`).join('')}</select></td>
+    <td class="num small">${fmtDT(u.ultimoAcesso)}</td><td class="num small">${fmtD(u.criado)}</td></tr>`;}).join('')||'<tr><td colspan="6" class="empty">Nenhum usuário.</td></tr>'}
+  </tbody></table></div>
+  <div class="formula"><b>Perfis:</b> Operador lança e avança as operações · Supervisor também importa planilhas e edita cadastros · Administrador também aprova usuários e gerencia os dados do sistema. Para bloquear alguém, mude a situação para <b>Inativo</b>.</div></section>
+  <section class="panel"><header><h2>Dados do sistema</h2></header><div class="pbody row">
+  ${vazio?`<button class="btn" data-act="loadSample">Carregar dados de exemplo</button><span class="muted small">Útil para treinar a equipe antes de começar a operação real.</span>`:
+   `<button class="btn danger" data-act="wipeAll">${armedDel?'Clique de novo para APAGAR TUDO':'Apagar todos os dados operacionais'}</button><span class="muted small">Remove bookings, contêineres, transportes, ovações/desovas, lotes e histórico. Usuários e cadastros continuam. Não tem como desfazer.</span>`}
+  </div></section>`;
+};
+function novoUser(){form('Criar usuário',[{k:'nome',label:'Nome completo',req:true},{k:'email',label:'E-mail',req:true},{k:'senha',label:'Senha provisória (mínimo 6)',req:true,help:'Passe a senha para a pessoa; ela pode trocar em “Esqueci a senha”.'},{k:'perfil',label:'Perfil',type:'select',opts:Object.entries(PERFIS).map(([v,l])=>({v,l})),v:'operador'}],o=>{
+  if(String(o.senha).length<6)return {k:'senha',err:'Mínimo de 6 caracteres'};
+  const sec=firebase.apps.find(a=>a.name==='sec')||firebase.initializeApp(FIREBASE_CONFIG,'sec');
+  toast('Criando usuário…');
+  sec.auth().createUserWithEmailAndPassword(o.email.trim(),o.senha).then(c=>db.collection('users').doc(c.user.uid).set({nome:o.nome,email:o.email.trim(),perfil:o.perfil,status:'ativo',criado:iso(now()),criadoPor:USER.email}).then(()=>sec.auth().signOut()))
+    .then(()=>toast('Usuário '+o.email+' criado e ativo')).catch(e=>toast(aerr(e)));
+},'Criar usuário');}
+function loadSample(){const smp=sample();COLS.forEach(c=>S[c]=smp[c]);S.cad=smp.cad;S.seq=smp.seq;save();toast('Dados de exemplo carregados');}
+function wipeAll(){if(!armedDel){armedDel=true;render();setTimeout(()=>{armedDel=false;if(cur==='usuarios')render();},5000);return;}armedDel=false;COLS.forEach(c=>S[c]=[]);S.seq=EMPTY().seq;save();toast('Dados operacionais apagados');render();}
+
+/* ============ eventos ============ */
+document.addEventListener('click',e=>{
+  const t=e.target;
+  const g=t.closest('[data-go]');if(g){go(g.dataset.go);return;}
+  const gt=t.closest('[data-goto]');if(gt&&!t.closest('a')){go(gt.dataset.goto);return;}
+  const cn=t.closest('[data-cnum]');if(cn&&!t.closest('button')){e.preventDefault();cDrawer(cn.dataset.cnum);return;}
+  const bk=t.closest('[data-bk]');if(bk&&!t.closest('button,input')){e.preventDefault();bookingDrawer(bk.dataset.bk);return;}
+  const ca=t.closest('[data-cact]');if(ca){cAction(ca.dataset.cact,ca.dataset.c);return;}
+  const ot=t.closest('[data-ot]');if(ot){moveOT(ot.dataset.ot,ot.dataset.to);return;}
+  const op=t.closest('[data-op]');if(op){op.dataset.opto==='start'?opStart(op.dataset.op):opEnd(op.dataset.op);return;}
+  const tb=t.closest('[data-tabov]');if(tb){tabOv=tb.dataset.tabov;render();return;}
+  const ta=t.closest('[data-tabarm]');if(ta){tabArm=ta.dataset.tabarm;render();return;}
+  const sd=t.closest('[data-saida]');if(sd){saidaLote(sd.dataset.saida);return;}
+  const cd=t.closest('[data-cad]');if(cd){addCad(cd.dataset.cad);return;}
+  const rt=t.closest('[data-rtab]');if(rt){rep.tab=rt.dataset.rtab;render();return;}
+  const cp=t.closest('[data-copy]');if(cp){const tb=document.getElementById(cp.dataset.copy);if(!tb)return;const tsv=[...tb.rows].map(r=>[...r.cells].map(c=>c.innerText.replace(/\s+/g,' ').trim()).join('\t')).join('\n');
+    const done=()=>toast('Tabela copiada: cole no Excel');const fb=()=>{const ta=document.createElement('textarea');ta.value=tsv;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(_){toast('Selecione a tabela e copie manualmente');}ta.remove();};
+    try{navigator.clipboard.writeText(tsv).then(done,fb);}catch(_){fb();}return;}
+  const a=t.closest('[data-act]');if(!a)return;const act=a.dataset.act;
+  if(act==='close')closeAll();
+  else if(act==='novoBk')novoBooking();
+  else if(act==='editBk'){const b=bkById(a.dataset.id);form('Editar booking '+b.booking,bookingFields(b),o=>{if(o.booking!==b.booking&&S.bookings.some(x=>x.booking===o.booking))return {k:'booking',err:'Número já usado'};Object.assign(b,o);log(b.booking,'Booking editado');toast('Booking atualizado');});}
+  else if(act==='addC')addContainer(a.dataset.id);
+  else if(act==='novoC')novoC();
+  else if(act==='editC')editC(a.dataset.id);
+  else if(act==='novaOT')novaOT();
+  else if(act==='novaDes')novaDes();
+  else if(act==='novaOvLivre')novaOvLivre();
+  else if(act==='novoLote')novoLote();
+  else if(act==='impCancel'){imp={kind:null,parsed:[]};render();}
+  else if(act==='impGo')impGo();
+  else if(act==='novoUser')novoUser();
+  else if(act==='loadSample')loadSample();
+  else if(act==='wipeAll')wipeAll();
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.chk){const b=bkById(t.dataset.id);b.check[t.dataset.chk]=t.checked;b.checkAt=Object.assign({},b.checkAt,{[t.dataset.chk]:t.checked?iso(now()):null});const lab={draft:'Draft enviado ao armador',vgm:'VGM informado',due:'DU-E registrada',nf:'NF emitida'}[t.dataset.chk];log(b.booking,(t.checked?'':'Desmarcado: ')+lab);refresh();}
+  if(t.id==='bkst'){fBk.st=t.value;render();}
+  if(t.id==='cst'){fC.st=t.value;render();}
+  if(t.dataset.uperfil){db.collection('users').doc(t.dataset.uperfil).update({perfil:t.value}).then(()=>toast('Perfil atualizado')).catch(fbErr);}
+  if(t.dataset.ustatus){db.collection('users').doc(t.dataset.ustatus).update({status:t.value}).then(()=>toast(t.value==='ativo'?'Acesso liberado':'Situação atualizada')).catch(fbErr);}
+  if(t.id==='rper'){rep.per=+t.value;render();}
+  if(t.id==='rarm'){rep.arm=t.value;render();}
+  if(t.id==='rtar'){rep.tarifa=Math.max(0,+t.value||0);render();}
+  if(t.dataset.file&&t.files[0])readFile(t.dataset.file,t.files[0]);
+});
+let qT;document.addEventListener('input',e=>{const t=e.target;if(t.id==='bkq'||t.id==='cq'){clearTimeout(qT);qT=setTimeout(()=>{if(t.id==='bkq')fBk.q=t.value;else fC.q=t.value;const pos=t.selectionStart;render();const n=$('#'+t.id);if(n){n.focus();try{n.setSelectionRange(pos,pos);}catch(_){}}},250);}});
+document.addEventListener('dragover',e=>{const d=e.target.closest('[data-drop]');if(d){e.preventDefault();d.classList.add('over');}});
+document.addEventListener('dragleave',e=>{const d=e.target.closest('[data-drop]');if(d)d.classList.remove('over');});
+document.addEventListener('drop',e=>{const d=e.target.closest('[data-drop]');if(d){e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)readFile(d.dataset.drop,f);}});
+$('#searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('#q').value.trim();if(!q)return;const c=cByNum(q);if(c){cDrawer(c.num);return;}
+  const b=S.bookings.find(x=>norm(x.booking)===norm(q))||S.bookings.find(x=>norm(x.booking).includes(norm(q)));if(b){bookingDrawer(b.id);return;}
+  const cc=S.containers.find(x=>x.num.includes(cleanC(q)));if(cc){cDrawer(cc.num);return;}toast('Nada encontrado para “'+q+'”');});
+function tick(){const d=new Date();$('#clock').textContent=d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})+' · '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+tick();setInterval(()=>{tick();},30000);
+setInterval(()=>{if(inApp&&!document.querySelector('.ov.center')&&!drawerFn&&!document.activeElement.matches('input,select,textarea')){render();}},60000);
+})();
+</script>
+</body>
+</html>
