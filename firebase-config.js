@@ -14,3 +14,4 @@ window.FIREBASE_CONFIG = {
   appId: "1:37304342193:web:14ad8dadf18ac60b603490",
   measurementId: "G-C13H0MJYYG"
 };
+window.FIRESTORE_DATABASE = "southamerica-east1";
