@@ -6,10 +6,11 @@
 //  A segurança é feita pelas regras do Firestore (firestore.rules).
 // =====================================================================
 window.FIREBASE_CONFIG = {
-  apiKey: "COLE_AQUI_A_API_KEY",
-  authDomain: "seu-projeto.firebaseapp.com",
-  projectId: "seu-projeto",
-  storageBucket: "seu-projeto.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000"
+  apiKey: "AIzaSyDuF14cYuweTllzmadIhDEEIaIb9t27JK0",
+  authDomain: "sofia-53b05.firebaseapp.com",
+  projectId: "sofia-53b05",
+  storageBucket: "sofia-53b05.firebasestorage.app",
+  messagingSenderId: "37304342193",
+  appId: "1:37304342193:web:14ad8dadf18ac60b603490",
+  measurementId: "G-C13H0MJYYG"
 };
