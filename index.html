@@ -244,6 +244,32 @@ body.locked .app{display:none}
 .amsg.ok{background:var(--okSoft);color:var(--ok)}
 .who{display:flex;flex-direction:column;line-height:1.2;font-size:12.5px;text-align:right}
 .who span{color:var(--muted);font-size:11.5px}
+#printArea{display:none}
+.doc{font:12px/1.4 var(--f-ui);color:#000;background:#fff}
+.dhead{display:flex;align-items:center;gap:16px;border-bottom:3px solid #D6001C;padding-bottom:10px;margin-bottom:12px}
+.dhead img{width:150px;height:auto}
+.dhead .dt{flex:1}.dhead h1{margin:0;font-size:20px;font-weight:800}
+.dhead .dn{text-align:right;display:flex;flex-direction:column;font-size:11px}.dhead .dn b{font-size:18px;font-family:var(--f-mono)}
+.doc h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:14px 0 6px;color:#444}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #999;border-left:1px solid #999;margin-bottom:8px}
+.dgrid.two{grid-template-columns:1fr 1fr}
+.df{border-right:1px solid #999;border-bottom:1px solid #999;padding:4px 6px;min-height:38px;display:flex;flex-direction:column}
+.df small{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#555}.df b{font-size:12.5px;font-weight:600}.df.big b{font-size:14px}.df.mono b{font-family:var(--f-mono)}
+.dtab{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px}.dtab th,.dtab td{border:1px solid #999;padding:4px 6px;height:22px;text-align:left;background:#fff;color:#000}
+.dchk{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0;font-size:12px}
+.dbox{border:1px solid #999;min-height:70px;padding:4px 6px;margin:8px 0}.dbox small{font-size:9px;text-transform:uppercase;color:#555}
+.dsig{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:44px;font-size:11px;text-align:center}.dsig span{display:block;border-top:1px solid #000;margin-bottom:4px}
+.dnote{font-size:11px;color:#444}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff!important;color:#000}
+  .side,.top,.demo,#auth,.toast,.btn,.ov .drawer>header .btn,[data-xl],[data-xlt],[data-copy],.tabs,select,input[type=search]{display:none!important}
+  .app{display:block!important}.view{padding:0!important}
+  .panel,.kpi,.sc{box-shadow:none!important;break-inside:avoid}
+  .ov{position:static;background:none}.drawer{width:100%;height:auto;box-shadow:none}
+  body.pdoc .app,body.pdoc #layer,body.pdoc .ov.center{display:none!important}
+  body.pdoc #printArea{display:block!important}
+}
 @media (max-width:860px){
   .app{grid-template-columns:1fr}
   .side{position:static;height:auto;padding-block:10px 6px}
@@ -277,6 +303,7 @@ body.locked .app{display:none}
       <h1 id="title">Painel</h1>
       <form class="search" id="searchForm"><input id="q" type="search" placeholder="Contêiner ou booking (ex.: MSCU…)" aria-label="Buscar contêiner ou booking"><button class="btn" type="submit">Buscar</button></form>
       <span class="clock" id="clock"></span>
+      <button class="btn sm" id="printView" type="button" title="Imprimir esta tela">Imprimir</button>
       <div class="who" id="who"></div>
       <button class="btn sm" id="logout" type="button">Sair</button>
     </div>
@@ -284,6 +311,7 @@ body.locked .app{display:none}
   </div>
 </div>
 <div id="layer"></div>
+<div id="printArea"></div>
 
 <script>
 (function(){
@@ -446,7 +474,7 @@ function counts(){
 function renderNav(){const c=counts();c.usuarios=usersList.filter(u=>u.status==='pendente').length;let g='',h='';VIEWS.filter(allowed).forEach(v=>{if(v.g!==g){g=v.g;h+=`<div class="grp">${g}</div>`;}h+=`<a href="#${v.id}" class="${v.id===cur?'on':''}" data-v="${v.id}"><span>${v.nome}</span>${c[v.id]?`<span class="badge" title="Itens que precisam de atenção">${c[v.id]}</span>`:''}</a>`;});$('#nav').innerHTML=h;}
 function go(v){if(!VIEWS.find(x=>x.id===v)||!allowed(v))v='painel';cur=v;try{history.replaceState(null,'','#'+v);}catch(e){}render();window.scrollTo(0,0);}
 $('#nav').addEventListener('click',e=>{const a=e.target.closest('a[data-v]');if(!a)return;e.preventDefault();go(a.dataset.v);});
-function render(){renderNav();$('#title').textContent=VIEWS.find(v=>v.id===cur).nome;$('#view').innerHTML=R[cur]();bindView();}
+function render(){renderNav();$('#title').textContent=VIEWS.find(v=>v.id===cur).nome;$('#view').innerHTML=R[cur]();bindView();decorateExports($('#view'));}
 function bindView(){}
 
 /* ============ toast / modal / drawer ============ */
@@ -455,7 +483,7 @@ const layer=$('#layer');
 let drawerFn=null;
 function closeAll(){layer.innerHTML='';drawerFn=null;}
 function openDrawer(fn){drawerFn=fn;paintDrawer();}
-function paintDrawer(){if(!drawerFn)return;layer.innerHTML=`<div class="ov" data-close><div class="drawer" role="dialog" aria-modal="true">${drawerFn()}</div></div>`;}
+function paintDrawer(){if(!drawerFn)return;layer.innerHTML=`<div class="ov" data-close><div class="drawer" role="dialog" aria-modal="true">${drawerFn()}</div></div>`;decorateExports(layer);}
 function refresh(){save();render();if(drawerFn)paintDrawer();}
 layer.addEventListener('click',e=>{if(e.target.hasAttribute('data-close')&&e.target===e.currentTarget.firstElementChild){closeAll();}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('.ov.center'))$('.ov.center').remove();else closeAll();}});
@@ -574,7 +602,7 @@ function bookingDrawer(id){openDrawer(()=>{
     return a.map(([k,l])=>`<button class="btn sm" data-cact="${k}" data-c="${c.id}">${l}</button>`).join(' ');};
   const falta=s.total-s.cs.length;
   return `<header><div style="flex:1"><div class="muted small">${H(b.armador)} · booking</div><h2 class="mono">${H(b.booking)}</h2><div class="muted">${H(b.navio)} ${H(b.viagem)} → ${H(b.destino)} · ${H(b.exportador)}</div></div>
-    <button class="btn" data-act="editBk" data-id="${b.id}">Editar</button><button class="btn ghost" data-act="close" aria-label="Fechar">✕</button></header>
+    <button class="btn" data-print-bk="${b.id}">Imprimir</button><button class="btn" data-act="editBk" data-id="${b.id}">Editar</button><button class="btn ghost" data-act="close" aria-label="Fechar">✕</button></header>
   <div class="dbody">
     <div class="dl">
       <div class="dlbox ${s.uD}"><span class="small muted">DEADLINE DE DRAFT</span><span class="big">${H(dlText(b.deadlineDraft,s.draftPend))}</span><span class="num">${fmtDT(b.deadlineDraft)}</span><span class="small">${s.draftPend?'Instruções do BL ainda não enviadas':'Draft enviado ao armador'}</span></div>
@@ -673,9 +701,9 @@ R.transporte=()=>{
       <div class="route">${H(o.origem)} → <b>${H(o.destino)}</b></div>
       <div class="meta">${fmtDT(o.agenda)} ${late?'<span class="bad">· atrasada</span>':''} · ${H(o.motorista||'sem motorista')} · <span class="mono">${H(o.cavalo||'')}${o.carreta?' / '+H(o.carreta):''}</span></div>
       ${risk&&risk!=='ok'?`<div>${dlChip(b.deadlineCarga,true)} <span class="small muted">deadline de carga</span></div>`:''}
-      ${st!=='Concluída'?`<div class="row"><button class="btn sm pri" data-ot="${o.id}" data-to="${st==='Programada'?'Em rota':'Concluída'}">${st==='Programada'?'Iniciar viagem':'Concluir entrega'}</button></div>`:`<div class="meta">Concluída ${fmtDT(o.fim||o.agenda)}</div>`}
+      ${st!=='Concluída'?`<div class="row"><button class="btn sm pri" data-ot="${o.id}" data-to="${st==='Programada'?'Em rota':'Concluída'}">${st==='Programada'?'Iniciar viagem':'Concluir entrega'}</button><button class="btn sm" data-print-ot="${o.id}">Imprimir OT</button></div>`:`<div class="meta">Concluída ${fmtDT(o.fim||o.agenda)}${o.ocorrencia&&o.ocorrencia!=='Nenhuma'?` · <span class="bad">${H(o.ocorrencia)}</span>`:''}</div><div class="row"><button class="btn sm" data-print-ot="${o.id}">Imprimir OT</button></div>`}
       </div>`;}).join('')||'<div class="muted small" style="padding:6px">Nenhuma OT.</div>'}</div></div>`;};
-  return `<div class="row"><span class="muted">Ordens de transporte (OT) de contêineres e carga solta. Retirada de vazio e entrega no terminal atualizam o status do contêiner.</span><span class="spacer"></span><button class="btn pri" data-act="novaOT">+ Nova OT</button></div>
+  return `<div class="row"><span class="muted">Ordens de transporte (OT) de contêineres e carga solta. Retirada de vazio e entrega no terminal atualizam o status do contêiner.</span><span class="spacer"></span><button class="btn" data-act="xlOTs">⬇ Excel</button><button class="btn pri" data-act="novaOT">+ Nova OT</button></div>
   <div class="kan">${col('Programada')}${col('Em rota')}${col('Concluída')}</div>`;
 };
 function novaOT(){form('Nova ordem de transporte',[
@@ -685,7 +713,7 @@ function novaOT(){form('Nova ordem de transporte',[
   {k:'carreta',label:'Carreta',type:'select',opts:S.cad.veiculos.filter(v=>v.tipo!=='Cavalo').map(v=>v.placa)}],o=>{
     if(o.container){o.container=cleanC(o.container);if(!isoOK(o.container))return {k:'container',err:'Número inválido (dígito verificador ISO 6346)'};}
     const c=o.container&&cByNum(o.container);const id=nextId('ot','OT');S.ots.push(Object.assign({id,bookingId:c?c.bookingId:null,status:'Programada',criado:iso(now())},o));if(o.container)log(o.container,`${id} criada – ${o.tipo}`);toast(id+' programada');},'Programar OT');}
-function moveOT(id,to){const o=S.ots.find(x=>x.id===id);const c=o.container&&cByNum(o.container);o.status=to;if(to==='Concluída')o.fim=iso(now());
+function moveOT(id,to){const o=S.ots.find(x=>x.id===id);const c=o.container&&cByNum(o.container);o.status=to;if(to==='Em rota'&&!o.inicio)o.inicio=iso(now());if(to==='Concluída')o.fim=iso(now());
   if(c){if(o.tipo==='Retirada de vazio'&&to==='Concluída'){c.status='Vazio no pátio';c.gateIn=iso(now());log(c.num,'Gate In – vazio recebido ('+id+')');}
     else if(o.tipo==='Entrega no terminal'){if(to==='Em rota'){c.status='Em trânsito p/ terminal';c.posicao='';log(c.num,`Saiu para ${o.destino} (${id})`);}else{c.status='Entregue no terminal';c.entregueAt=iso(now());log(c.num,`Entregue no ${o.destino} (${id})`);}}
     else if(o.tipo==='Devolução de vazio'&&to==='Concluída'){c.status='Devolvido ao armador';c.posicao='';log(c.num,'Devolvido ao armador ('+id+')');}
@@ -702,7 +730,7 @@ R.ovacao=()=>{
   ${L.map(o=>{const b=bkById(o.bookingId),l=loteById(o.loteId);const t=o.inicio?(o.fim?dur(new Date(o.fim)-new Date(o.inicio)):dur(now()-new Date(o.inicio))+' em curso'):'—';
     const dl=b&&o.status!=='Concluída'?dlChip(b.deadlineCarga,true):'';
     return `<tr><td class="mono"><b>${H(o.id)}</b></td><td><span class="tag">${H(o.tipo)}</span></td><td class="mono"><a href="#" data-cnum="${H(o.container)}">${H(o.container)}</a></td><td class="mono small">${H(b?b.booking:(o.bl||'—'))}<div>${dl}</div></td><td>${H(o.cliente)}</td><td class="small">${l?H(l.id+' · '+l.descricao):'<span class="muted">—</span>'}</td><td class="r num">${nf(o.volumes)}</td><td class="r num">${nf(o.peso)}</td><td class="num small">${fmtDT(o.programado)}</td><td class="small">${t}<div class="muted">${H(o.conferente||'')}</div></td><td>${chipOT(o.status)}</td>
-    <td>${o.status==='Programada'?`<button class="btn sm pri" data-op="${o.id}" data-opto="start">Iniciar</button>`:o.status==='Em andamento'?`<button class="btn sm pri" data-op="${o.id}" data-opto="end">Concluir</button>`:''}</td></tr>`;}).join('')||`<tr><td colspan="12" class="empty">Nenhuma ordem.</td></tr>`}
+    <td>${o.status==='Programada'?`<button class="btn sm pri" data-op="${o.id}" data-opto="start">Iniciar</button>`:o.status==='Em andamento'?`<button class="btn sm pri" data-op="${o.id}" data-opto="end">Concluir</button>`:''}<button class="btn sm" data-print-op="${o.id}" title="Imprimir ordem">🖨</button></td></tr>`;}).join('')||`<tr><td colspan="12" class="empty">Nenhuma ordem.</td></tr>`}
   </tbody></table></div></section>
   <p class="muted small">Concluir uma ovação registra lacre e peso, calcula o VGM e baixa o saldo do lote no armazém. Concluir uma desova cria o lote da carga no armazém e libera o contêiner vazio.</p>`;
 };
@@ -863,64 +891,45 @@ function addCad(k){if(k==='motoristas')return form('Novo motorista',[{k:'nome',l
 /* Histórico simulado (90 dias) — gerado de forma determinística para o protótipo */
 function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 let HIST=null;
-function genHist(){
-  const r=rng(1329),day0=Math.floor(now()/DAY)*DAY;
-  const pick=(arr,w)=>{if(!w)return arr[Math.floor(r()*arr.length)];let x=r()*w.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){x-=w[i];if(x<=0)return arr[i];}return arr[arr.length-1];};
-  const nrm=(m,s)=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return m+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
-  const ARMW=[45,20,15,12,8];
-  const EXP=[{n:'Cacau Sul Exportadora',e:'Sacaria',q:.9},{n:'Resinas Camaçari S.A.',e:'Big bag',q:.97},{n:'Papel Baiano Ltda',e:'Bobina',q:.95},{n:'Sisal Nordeste Ind.',e:'Fardo',q:.82},{n:'Frutas do Vale S.F.',e:'Palete',q:.93},{n:'Café Chapada Diamantina',e:'Sacaria',q:.88},{n:'Granitos Sul-Baiano',e:'Caixa',q:.96},{n:'Couros Bahia Ltda',e:'Palete',q:.91}];
-  const EXPW=[22,18,14,10,6,12,10,8];
-  const DUR={Sacaria:3.3,'Big bag':1.4,Bobina:1.9,Fardo:2.7,Palete:1.7,Caixa:2.9};
-  const CONF=[{n:'Edvaldo',f:.92},{n:'Joilson',f:1.0},{n:'Marcos Paulo',f:1.12},{n:'Rita',f:.97}];
-  const MOT=['José Carlos Santana','Marcos Vinícius Reis','Antônio Bispo','Rafael Nascimento','Cleiton Souza'];
-  const MOTF={'José Carlos Santana':.6,'Marcos Vinícius Reis':1,'Antônio Bispo':.8,'Rafael Nascimento':1.1,'Cleiton Souza':1.9};
-  const IMP=['Autopeças Recôncavo','Distribuidora Baía Norte','Têxtil Feira de Santana','Eletro Lauro de Freitas'];
-  const bks=[],cnts=[],ots=[],ops=[],occ=[],inv=[];
-  const mkOT=(tipo,agenda,base,sd)=>{const mot=pick(MOT);const late=r()<0.07*MOTF[mot];const delay=late?30+Math.abs(nrm(40,35)):nrm(-4,11);
-    const inFull=r()>0.018;ots.push({tipo,mot,agenda,delay:Math.round(delay),dur:Math.max(25,Math.round(nrm(base,sd))),tat:Math.max(18,Math.round(nrm(47,16)+(r()<.08?45:0))),inFull,onTime:delay<=30});};
-  for(let d=89;d>=0;d--){
-    const dStart=day0-d*DAY;
-    const nb=r()<.35?2:(r()<.8?1:0);
-    for(let k=0;k<nb;k++){
-      const armador=pick(ARM,ARMW),ex=pick(EXP,EXPW),tipo=pick(['40HC','40DV','20DV','40RH'],[50,20,25,5]),qtd=1+Math.floor(r()*5);
-      const dc=dStart+(14+Math.floor(r()*8))*HR,dd=dc-24*HR;
-      const draftLate=r()>ex.q+0.03,vgmLate=r()<(1-ex.q)*0.6;
-      const b={armador,exp:ex.n,tipo,qtd,dc,dd,draftAt:draftLate?dd+(1+r()*10)*HR:dd-(2+r()*40)*HR,vgmLate,teu:TEU(tipo)*qtd,rolados:0,antecedencia:[]};
-      for(let i=0;i<qtd;i++){
-        const late=r()<0.028;const ent=late?dc+(1+r()*8)*HR:dc-(2+r()*36)*HR;
-        const dwell=Math.max(4,nrm(34,18)+(r()<.12?40:0));const ps=ent-dwell*HR;
-        const conf=pick(CONF);const dur=Math.max(.6,DUR[ex.e]*conf.f*(0.85+r()*.35));
-        cnts.push({armador,exp:ex.n,tipo,late,ent,dwell,rolado:late&&r()<.55,dc});
-        if(late&&cnts[cnts.length-1].rolado)b.rolados++;
-        b.antecedencia.push((dc-ent)/HR);
-        ops.push({tipo:'Ovação',t:ps-dur*HR,cliente:ex.n,emb:ex.e,conf:conf.n,dur,vol:Math.round(ex.e==='Big bag'?22:ex.e==='Bobina'?36:ex.e==='Sacaria'?400:ex.e==='Fardo'?160:ex.e==='Caixa'?900:22),m3:TEU(tipo)*28*(.75+r()*.2),avaria:r()<0.012,armador});
-        mkOT('Retirada de vazio',ps-dur*HR-(3+r()*20)*HR,95,30);
-        mkOT('Entrega no terminal',ent-HR,72,22);
-      }
-      mkOT('Coleta de carga no cliente',dd-(10+r()*30)*HR,150,45);
-      bks.push(b);
-    }
-    const nd=r()<.55?(r()<.3?2:1):0;
-    for(let k=0;k<nd;k++){const emb=pick(['Palete','Caixa','Palete','Caixa','Big bag']);const conf=pick(CONF);const dur=Math.max(.6,DUR[emb]*conf.f*(0.8+r()*.4));const cl=pick(IMP);
-      ops.push({tipo:'Desova',t:dStart+(8+r()*8)*HR,cliente:cl,emb,conf:conf.n,dur,vol:emb==='Caixa'?600:30,m3:30+r()*40,avaria:r()<0.015,armador:pick(ARM,ARMW)});
-      mkOT('Devolução de vazio',dStart+(14+r()*20)*HR,85,25);}
-    AREAS.forEach((a,i)=>{const base=[.72,.61,.54][i];occ.push({t:dStart,area:a.id,p:Math.min(.97,Math.max(.25,base+.12*Math.sin((d+i*9)/9)+nrm(0,.03)))});});
-  }
-  [[60,98.4],[30,99.1],[0,99.4]].forEach(([d,v])=>inv.push({t:day0-d*DAY,acc:v+nrm(0,.15),itens:180+Math.floor(r()*60)}));
-  return {bks,cnts,ots:ots.filter(o=>o.agenda<=now()),ops:ops.filter(o=>o.t<=now()),occ,inv};
+function buildReal(){
+  const T=v=>{if(!v)return null;const t=new Date(v).getTime();return isNaN(t)?null:t;},nowT=now();
+  const logT=(ref,re)=>{const l=S.log.filter(x=>x.ref===ref&&re.test(x.msg)).sort((a,b)=>new Date(a.ts)-new Date(b.ts))[0];return l?T(l.ts):null;};
+  const bks=[],cnts=[],ops=[],ots=[],occ=[];
+  S.bookings.forEach(b=>{const dd=T(b.deadlineDraft),dc=T(b.deadlineCarga);if(!dc)return;const ca=b.checkAt||{},ck=b.check||{};
+    const draftAt=ca.draft?T(ca.draft):(ck.draft?dd:(dd&&dd<nowT?Infinity:null));
+    const vgmAt=ca.vgm?T(ca.vgm):(ck.vgm?dd:(dd&&dd<nowT?Infinity:null));
+    if(draftAt!=null)bks.push({armador:b.armador,exp:b.exportador,tipo:b.tipo,qtd:b.qtd,dc,dd,draftAt,vgmLate:vgmAt!=null&&vgmAt>dd,teu:TEU(b.tipo)*b.qtd});
+    cOf(b).forEach(c=>{const ent=T(c.entregueAt)||logT(c.num,/^Entregue/);if(!ent&&dc>nowT)return;
+      const ps=T(c.psEntrada);cnts.push({armador:b.armador,exp:b.exportador,tipo:c.tipo,late:ent?ent>dc:true,ent:ent||nowT,dwell:ps&&ent?(ent-ps)/HR:null,rolado:!ent&&!!T(b.ets)&&T(b.ets)<nowT,dc});});
+  });
+  S.ops.filter(o=>o.status==='Concluída'&&o.inicio&&o.fim).forEach(o=>{const l=loteById(o.loteId),c=cByNum(o.container);
+    ops.push({tipo:o.tipo,t:T(o.fim),cliente:o.cliente||'—',emb:(l&&l.embalagem)||'Não informado',conf:o.conferente||'—',dur:(T(o.fim)-T(o.inicio))/HR,vol:o.volumes||0,
+      m3:l&&l.volumes?l.m3*((o.volumes||0)/l.volumes):(c?TEU(c.tipo)*28:0),avaria:!!(o.avaria&&String(o.avaria).trim()),armador:c?c.armador:''});});
+  S.ots.forEach(o=>{const ag=T(o.agenda);if(!ag)return;const ini=T(o.inicio),fim=T(o.fim);
+    if(o.status==='Programada'){const late=(nowT-ag)/60000;if(late<=30)return;ots.push({tipo:o.tipo,mot:o.motorista||'—',agenda:ag,delay:late,dur:null,inFull:true,onTime:false});return;}
+    const delay=ini?(ini-ag)/60000:null;ots.push({tipo:o.tipo,mot:o.motorista||'—',agenda:ag,delay,dur:ini&&fim?(fim-ini)/60000:null,inFull:!o.ocorrencia||o.ocorrencia==='Nenhuma',onTime:delay==null||delay<=30});});
+  const ents=S.lotes.map(l=>T(l.entrada)).filter(Boolean);
+  if(ents.length){const first=Math.min(...ents),day0=Math.floor(nowT/DAY)*DAY;
+    for(let d=89;d>=0;d--){const t=day0-d*DAY+18*HR;if(t<first)continue;const tt=Math.min(t,nowT);
+      AREAS.forEach(a=>{const u=S.lotes.filter(l=>l.area===a.id&&T(l.entrada)<=tt&&(!l.saida||T(l.saida)>tt)).reduce((s,l)=>s+(d===0&&l.volumes?l.m3*(l.saldo/l.volumes):l.m3),0);occ.push({t,area:a.id,p:u/a.cap});});}}
+  const inv=((S.cad&&S.cad.inventarios)||[]).map(i=>({t:T(i.data),itens:i.itens,acc:100*(i.itens-i.div)/i.itens})).filter(i=>i.t&&i.itens>0).sort((a,b)=>a.t-b.t);
+  return {bks,cnts,ots,ops,occ,inv};
 }
+function novoInventario(){form('Registrar inventário',[{k:'data',label:'Data da contagem',type:'datetime',req:true,v:iso(now())},{k:'itens',label:'Posições / lotes contados',type:'number',req:true},{k:'div',label:'Posições com divergência',type:'number',req:true,v:0,help:'Quantas posições tinham quantidade ou local diferente do sistema'}],o=>{
+  if(!(o.itens>0))return {k:'itens',err:'Informe quantas posições foram contadas'};if(o.div<0||o.div>o.itens)return {k:'div',err:'Valor inválido'};
+  S.cad.inventarios=(S.cad.inventarios||[]).concat([{data:o.data,itens:o.itens,div:o.div,por:ME&&ME.nome||''}]);toast('Inventário registrado');},'Registrar');}
 let rep={tab:'score',per:90,arm:'',tarifa:2.5};
 const inPer=t=>t>=now()-rep.per*DAY&&t<=now();
 const armOK=a=>!rep.arm||a===rep.arm;
 const pct=(a,b)=>b?a/b:null;
 const fP=v=>v==null?'—':nf(v*100,1)+'%';
-const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const avg=a=>{a=a.filter(x=>x!=null&&isFinite(x));return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;};
 function weeks(){const W=Math.ceil(rep.per/7),e=now(),out=[];for(let i=W-1;i>=0;i--){const b=e-(i+1)*7*DAY,t=e-i*7*DAY;out.push({b,t,l:new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})});}return out;}
 function stClass(v,meta,dir){if(v==null)return '';if(dir==='max')return v>=meta?'ok':v>=meta*0.97?'warn':'crit';if(dir==='min')return v<=meta?'ok':v<=meta*1.15?'warn':'crit';const [lo,hi]=meta;return v>=lo&&v<=hi?'ok':(v<lo-.1||v>hi+.07)?'crit':'warn';}
 /* gráficos */
 function colChart(labels,series,o={}){
   const W=o.wide?1200:640,CH=o.wide?300:250,L=50,Rr=12,T=16,B=36,iw=W-L-Rr,ih=CH-T-B;
-  const all=series.flatMap(s=>s.vals.filter(v=>v!=null));let mx=o.max!=null?o.max:Math.max(...all,o.target||0)*1.15||1;let mn=o.min||0;
+  const all=series.flatMap(s=>s.vals.filter(v=>v!=null));let mx=o.max!=null?o.max:Math.max(...all,o.target||0)*1.15||1;let mn=o.min||0;if(all.length&&Math.min(...all)<mn)mn=Math.max(0,Math.floor((Math.min(...all)-.05)*10)/10);
   const y=v=>T+ih-(v-mn)/(mx-mn)*ih;const n=labels.length,gw=iw/n,bw=Math.min(28,(gw*.72)/series.length);
   let g='';for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4;g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" class="gl"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" class="ax">${o.pct?nf(v*100)+'%':nf(v,v<10&&mx<10?1:0)}</text>`;}
   if(o.band){g+=`<rect x="${L}" width="${iw}" y="${y(o.band[1])}" height="${y(o.band[0])-y(o.band[1])}" class="band"/>`;}
@@ -931,14 +940,14 @@ function colChart(labels,series,o={}){
   return `<div class="chart"><svg viewBox="0 0 ${W} ${CH}" role="img" aria-label="${H(o.title||'Gráfico')}">${g}${bars}${tl}${xl}</svg>${leg}</div>`;}
 function hbars(rows,o={}){const mx=o.max||Math.max(...rows.map(r=>r.v),0)||1;return `<div class="hb">${rows.map(r=>`<div class="hbr"><span class="hbl">${H(r.l)}</span><span class="hbt"><i style="width:${Math.max(0,Math.min(100,r.v/mx*100))}%;background:${r.c||'var(--accent)'}"></i></span><span class="hbv num">${o.pct?fP(r.v):nf(r.v,o.d||0)}${r.x?` <span class="muted small">${H(r.x)}</span>`:''}</span></div>`).join('')}</div>`;}
 let tblN=0;
-function tbl(head,rows,o={}){const id='rt'+(++tblN);return `<div class="tw"><table id="${id}"><thead><tr>${head.map((h,i)=>`<th class="${o.r&&o.r.includes(i)?'r':''}">${H(h)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${o.r&&o.r.includes(i)?'r num':''}">${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${head.length}" class="empty">Sem dados no período.</td></tr>`}</tbody></table></div><div class="pbody" style="padding-top:8px;padding-bottom:10px"><button class="btn sm" data-copy="${id}">Copiar tabela para Excel</button></div>`;}
+function tbl(head,rows,o={}){const id='rt'+(++tblN);return `<div class="tw"><table id="${id}"><thead><tr>${head.map((h,i)=>`<th class="${o.r&&o.r.includes(i)?'r':''}">${H(h)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${o.r&&o.r.includes(i)?'r num':''}">${c}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${head.length}" class="empty">Sem dados no período.</td></tr>`}</tbody></table></div><div class="pbody" style="padding-top:8px;padding-bottom:10px"><button class="btn sm pri" data-xlt="${id}">⬇ Baixar Excel</button> <button class="btn sm" data-copy="${id}">Copiar</button></div>`;}
 const chipS=(cls,txt)=>`<span class="chip ${cls}">${txt}</span>`;
 function repPanel(t,sub,body,formula){return `<section class="panel"><header><h2>${t}</h2>${sub?`<span class="hint">${sub}</span>`:''}</header>${body}${formula?`<div class="formula"><b>Como calcular:</b> ${formula}</div>`:''}</section>`;}
 function kpiTile(l,v,s,cls){return `<div class="kpi ${cls||''}" style="cursor:default"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s||''}</span></div>`;}
 
 function repData(){
-  if(!HIST)HIST=genHist();
-  const bks=HIST.bks.filter(b=>inPer(b.dc)&&armOK(b.armador)),cnts=HIST.cnts.filter(c=>inPer(c.ent)&&armOK(c.armador)),ops=HIST.ops.filter(o=>inPer(o.t)&&armOK(o.armador)),ots=HIST.ots.filter(o=>inPer(o.agenda));
+  HIST=buildReal();
+  const bks=HIST.bks.filter(b=>inPer(b.dd)&&armOK(b.armador)),cnts=HIST.cnts.filter(c=>inPer(c.ent)&&armOK(c.armador)),ops=HIST.ops.filter(o=>inPer(o.t)&&armOK(o.armador)),ots=HIST.ots.filter(o=>inPer(o.agenda));
   const occ=HIST.occ.filter(o=>inPer(o.t));
   const ov=ops.filter(o=>o.tipo==='Ovação'),ds=ops.filter(o=>o.tipo==='Desova');
   const K={
@@ -947,13 +956,13 @@ function repData(){
     carga:pct(cnts.filter(c=>!c.late).length,cnts.length),
     rolados:cnts.filter(c=>c.rolado).length,
     otif:pct(ots.filter(o=>o.onTime&&o.inFull).length,ots.length),
-    tat:avg(ots.map(o=>o.tat)),
+    pont:pct(ots.filter(o=>o.onTime).length,ots.length),durTr:avg(ots.map(o=>o.dur)),
     ovDur:avg(ov.map(o=>o.dur)),
     ovDia:ov.length/rep.per,
     dwell:avg(cnts.map(c=>c.dwell)),
-    dwell72:pct(cnts.filter(c=>c.dwell>72).length,cnts.length),
+    dwell72:pct(cnts.filter(c=>c.dwell>72).length,cnts.filter(c=>c.dwell!=null).length),
     occ:avg(occ.map(o=>o.p)),
-    acc:HIST.inv[HIST.inv.length-1].acc/100,
+    acc:HIST.inv.length?HIST.inv[HIST.inv.length-1].acc/100:null,
     avaria:pct(ops.filter(o=>o.avaria).length,ops.length),
     ft:S.lotes.filter(l=>l.saldo>0&&diasArm(l)>l.freeTime).length,
   };
@@ -965,7 +974,7 @@ R.relatorios=()=>{
   const head=`<div class="row"><div class="tabs" style="flex:1;border:none">${REPTABS.map(([k,l])=>`<button class="${rep.tab===k?'on':''}" data-rtab="${k}">${l}</button>`).join('')}</div>
     <select id="rper" style="max-width:150px" aria-label="Período">${[30,60,90].map(p=>`<option value="${p}" ${rep.per===p?'selected':''}>Últimos ${p} dias</option>`).join('')}</select>
     <select id="rarm" style="max-width:170px" aria-label="Armador"><option value="">Todos os armadores</option>${ARM.map(a=>`<option ${rep.arm===a?'selected':''}>${a}</option>`).join('')}</select></div>
-    <div class="demo" style="border:1px solid var(--line);border-radius:6px">Relatórios calculados sobre um <b>histórico simulado de 90 dias</b> para demonstrar as análises. Esta versão ainda mostra dados de demonstração nos gráficos históricos; estoque atual e free time já usam os dados reais do sistema.</div>`;
+    <div class="demo" style="border:1px solid var(--line);border-radius:6px">Relatórios calculados com os <b>lançamentos reais do sistema</b>. Indicadores sem dados no período aparecem com “—”. Quanto mais a equipe registrar (início e fim das viagens, ovações, envio de draft e VGM), mais completos ficam os números.</div>`;
   return head+(RT[rep.tab]||RT.score)(D,K);
 };
 const RT={};
@@ -975,7 +984,7 @@ RT.score=(D,K)=>{
     ['Exportação','VGM informado no prazo',K.vgm,.98,'max','fP','Bookings com VGM no prazo ÷ bookings (exigência SOLAS)'],
     ['Exportação','Contêineres no terminal antes do deadline de carga',K.carga,.98,'max','fP','Cntrs entregues até o deadline de carga ÷ cntrs'],
     ['Transporte','OTIF (no prazo e completo)',K.otif,.95,'max','fP','OTs no horário (até 30 min) e sem ocorrência ÷ OTs'],
-    ['Transporte','Turnaround do caminhão no pátio',K.tat,60,'min','min','Média de (gate out − gate in) do caminhão'],
+    ['Transporte','Viagens iniciadas no horário',K.pont,.9,'max','fP','OTs iniciadas até 30 min do agendado ÷ OTs'],
     ['Ovação','Tempo médio de ovação por contêiner',K.ovDur,2.5,'min','h','Média de (fim − início) das ovações'],
     ['Pré-stacking','Dwell time médio no pré-stacking',K.dwell,48,'min','h','Média de (saída p/ terminal − entrada no pré-stacking)'],
     ['Armazenagem','Ocupação média dos armazéns',K.occ,[.7,.85],'band','fP','m³ ocupados ÷ capacidade (faixa ideal 70–85%)'],
@@ -984,34 +993,34 @@ RT.score=(D,K)=>{
   ];
   const fmt=(v,f)=>v==null?'—':f==='fP'?fP(v):f==='min'?nf(v)+' min':nf(v,1)+' h';
   const metaTxt=(m,dir,f)=>dir==='band'?`${fP(m[0])} a ${fP(m[1])}`:(dir==='max'?'≥ ':'≤ ')+fmt(m,f);
-  const tiles=rows.map(([a,n,v,m,dir,f])=>{const c=stClass(v,m,dir);return `<div class="sc ${c}"><span class="l">${a}</span><b>${n}</b><span class="v">${fmt(v,f)}</span><span class="s">Meta ${metaTxt(m,dir,f)} ${chipS(c,c==='ok'?'Dentro da meta':c==='warn'?'Atenção':'Fora da meta')}</span></div>`;}).join('');
+  const tiles=rows.map(([a,n,v,m,dir,f])=>{const c=stClass(v,m,dir);return `<div class="sc ${c}"><span class="l">${a}</span><b>${n}</b><span class="v">${fmt(v,f)}</span><span class="s">Meta ${metaTxt(m,dir,f)} ${chipS(c,c==='ok'?'Dentro da meta':c==='warn'?'Atenção':c==='crit'?'Fora da meta':'Sem dados')}</span></div>`;}).join('');
   return `<section class="scgrid">${tiles}</section>`+repPanel('Tabela de indicadores','Metas de referência de mercado, ajustáveis à realidade da Ziran',
-    tbl(['Área','Indicador','Resultado','Meta','Situação','Fórmula'],rows.map(([a,n,v,m,dir,f,fo])=>{const c=stClass(v,m,dir);return [H(a),`<b>${H(n)}</b>`,fmt(v,f),metaTxt(m,dir,f),chipS(c,c==='ok'?'Dentro':c==='warn'?'Atenção':'Fora'),`<span class="small muted">${H(fo)}</span>`];}),{r:[2]}));
+    tbl(['Área','Indicador','Resultado','Meta','Situação','Fórmula'],rows.map(([a,n,v,m,dir,f,fo])=>{const c=stClass(v,m,dir);return [H(a),`<b>${H(n)}</b>`,fmt(v,f),metaTxt(m,dir,f),chipS(c,c==='ok'?'Dentro':c==='warn'?'Atenção':c==='crit'?'Fora':'Sem dados'),`<span class="small muted">${H(fo)}</span>`];}),{r:[2]}));
 };
 RT.exp=(D,K)=>{
   const W=weeks();
   const wk=W.map(w=>{const c=D.cnts.filter(x=>x.ent>=w.b&&x.ent<w.t);return pct(c.filter(x=>!x.late).length,c.length);});
   const wd=W.map(w=>{const b=D.bks.filter(x=>x.dc>=w.b&&x.dc<w.t);return pct(b.filter(x=>x.draftAt<=x.dd).length,b.length);});
-  const byA=ARM.map(a=>{const b=D.bks.filter(x=>x.armador===a),c=D.cnts.filter(x=>x.armador===a);return {a,b,c};}).filter(x=>x.b.length);
-  const byE=[...new Set(D.bks.map(b=>b.exp))].map(e=>{const b=D.bks.filter(x=>x.exp===e);const dl=b.filter(x=>x.draftAt>x.dd);return {e,n:b.length,dl:dl.length,atraso:avg(dl.map(x=>(x.draftAt-x.dd)/HR)),vgm:b.filter(x=>x.vgmLate).length};}).sort((a,b)=>b.dl/b.n-a.dl/a.n);
+  const byA=ARM.map(a=>{const b=D.bks.filter(x=>x.armador===a),c=D.cnts.filter(x=>x.armador===a);return {a,b,c};}).filter(x=>x.b.length||x.c.length);
+  const byE=[...new Set(D.bks.map(b=>b.exp))].map(e=>{const b=D.bks.filter(x=>x.exp===e);const dl=b.filter(x=>x.draftAt>x.dd);return {e,n:b.length,dl:dl.length,atraso:avg(dl.filter(x=>isFinite(x.draftAt)).map(x=>(x.draftAt-x.dd)/HR)),vgm:b.filter(x=>x.vgmLate).length};}).sort((a,b)=>b.dl/b.n-a.dl/a.n);
   const ant=D.cnts.map(c=>(c.dc-c.ent)/HR);
   const fx=[['Atrasado',x=>x<0],['0–6 h',x=>x>=0&&x<6],['6–12 h',x=>x>=6&&x<12],['12–24 h',x=>x>=12&&x<24],['> 24 h',x=>x>=24]];
   return `<section class="kpis">${kpiTile('Draft no prazo',fP(K.draft),`${D.bks.length} bookings · meta 95%`,stClass(K.draft,.95,'max')==='ok'?'':'warn')}${kpiTile('VGM no prazo',fP(K.vgm),'meta 98%',stClass(K.vgm,.98,'max')==='ok'?'':'warn')}${kpiTile('Carga antes do deadline',fP(K.carga),`${D.cnts.length} contêineres · meta 98%`,stClass(K.carga,.98,'max')==='crit'?'crit':'')}${kpiTile('Contêineres rolados',K.rolados,'perderam o navio por atraso',K.rolados?'crit':'')}</section>
   <div class="grid2">${repPanel('Cumprimento do deadline de carga por semana','% de contêineres entregues no terminal dentro do prazo',colChart(W.map(w=>w.l),[{name:'Carga no prazo',vals:wk,color:'var(--accent)'},{name:'Draft no prazo',vals:wd,color:'var(--steel)'}],{pct:true,max:1,min:.7,target:.98}),'contêineres entregues até o deadline ÷ contêineres com deadline na semana')}
   ${repPanel('Antecedência de entrega no terminal','Quanto antes do deadline de carga o contêiner chegou',hbars(fx.map(([l,f],i)=>({l,v:ant.filter(f).length,c:i===0?'var(--crit)':i===1?'var(--warn)':'var(--accent)'})),{})+`<div class="pbody small muted" style="padding-top:0">Entregas com menos de 6 h de folga são risco de rolagem se houver fila no gate do terminal.</div>`,'deadline de carga − hora de entrada no terminal')}</div>
-  ${repPanel('Desempenho por armador','',tbl(['Armador','Bookings','Contêineres','TEU','Draft no prazo','VGM no prazo','Carga no prazo','Rolados','Antecedência média'],byA.map(({a,b,c})=>{const d=pct(b.filter(x=>x.draftAt<=x.dd).length,b.length),v=pct(b.filter(x=>!x.vgmLate).length,b.length),k=pct(c.filter(x=>!x.late).length,c.length);return [`<b>${a}</b>`,b.length,c.length,nf(c.reduce((s,x)=>s+TEU(x.tipo),0)),chipS(stClass(d,.95,'max'),fP(d)),chipS(stClass(v,.98,'max'),fP(v)),chipS(stClass(k,.98,'max'),fP(k)),c.filter(x=>x.rolado).length,nf(avg(c.map(x=>(x.dc-x.ent)/HR)),1)+' h'];}),{r:[1,2,3,7,8]}))}
+  ${repPanel('Desempenho por armador','',tbl(['Armador','Bookings','Contêineres','TEU','Draft no prazo','VGM no prazo','Carga no prazo','Rolados','Antecedência média'],byA.map(({a,b,c})=>{const d=pct(b.filter(x=>x.draftAt<=x.dd).length,b.length),v=pct(b.filter(x=>!x.vgmLate).length,b.length),k=pct(c.filter(x=>!x.late).length,c.length);return [`<b>${a}</b>`,b.length,c.length,nf(c.reduce((s,x)=>s+TEU(x.tipo),0)),chipS(stClass(d,.95,'max'),fP(d)),chipS(stClass(v,.98,'max'),fP(v)),chipS(stClass(k,.98,'max'),fP(k)),c.filter(x=>x.rolado).length,(v=>v==null?'—':nf(v,1)+' h')(avg(c.map(x=>(x.dc-x.ent)/HR)))];}),{r:[1,2,3,7,8]}))}
   ${repPanel('Exportadores que atrasam documentação','Base para cobrar o cliente e antecipar o follow-up do draft',tbl(['Exportador','Bookings','Drafts atrasados','% atrasado','Atraso médio','VGM atrasado'],byE.map(e=>[`<b>${H(e.e)}</b>`,e.n,e.dl,chipS(stClass(1-e.dl/e.n,.95,'max'),fP(e.dl/e.n)),e.atraso?nf(e.atraso,1)+' h':'—',e.vgm]),{r:[1,2,4,5]}))}`;
 };
 RT.tr=(D,K)=>{
   const W=weeks();const wk=W.map(w=>{const o=D.ots.filter(x=>x.agenda>=w.b&&x.agenda<w.t);return pct(o.filter(x=>x.onTime&&x.inFull).length,o.length);});
   const mots=[...new Set(D.ots.map(o=>o.mot))].map(m=>{const o=D.ots.filter(x=>x.mot===m);return {m,n:o.length,otif:pct(o.filter(x=>x.onTime&&x.inFull).length,o.length),atr:avg(o.filter(x=>!x.onTime).map(x=>x.delay)),dur:avg(o.map(x=>x.dur)),oc:o.filter(x=>!x.inFull).length};}).sort((a,b)=>a.otif-b.otif);
   const tipos=[...new Set(D.ots.map(o=>o.tipo))].map(t=>{const o=D.ots.filter(x=>x.tipo===t);return {t,n:o.length,otif:pct(o.filter(x=>x.onTime&&x.inFull).length,o.length),dur:avg(o.map(x=>x.dur))};});
-  const tf=[['até 30 min',x=>x<=30],['30–60 min',x=>x>30&&x<=60],['60–90 min',x=>x>60&&x<=90],['> 90 min',x=>x>90]];
-  return `<section class="kpis">${kpiTile('OTIF',fP(K.otif),`${D.ots.length} viagens · meta 95%`,stClass(K.otif,.95,'max')==='ok'?'':'warn')}${kpiTile('Pontualidade',fP(pct(D.ots.filter(o=>o.onTime).length,D.ots.length)),'chegada até 30 min do agendado')}${kpiTile('Turnaround no pátio',nf(K.tat)+' min','gate in → gate out · meta ≤ 60')}${kpiTile('Viagens por dia',nf(D.ots.length/rep.per,1),'média do período')}</section>
+  const tf=[['No horário (até 30 min)',x=>x<=30],['30–60 min',x=>x>30&&x<=60],['1–2 h',x=>x>60&&x<=120],['> 2 h',x=>x>120]];
+  return `<section class="kpis">${kpiTile('OTIF',fP(K.otif),`${D.ots.length} viagens · meta 95%`,stClass(K.otif,.95,'max')==='ok'?'':'warn')}${kpiTile('Pontualidade',fP(pct(D.ots.filter(o=>o.onTime).length,D.ots.length)),'chegada até 30 min do agendado')}${kpiTile('Duração média da viagem',K.durTr!=null?nf(K.durTr)+' min':'—','início → fim da OT')}${kpiTile('Viagens por dia',nf(D.ots.length/rep.per,1),'média do período')}</section>
   <div class="grid2">${repPanel('OTIF por semana','',colChart(W.map(w=>w.l),[{name:'OTIF',vals:wk,color:'var(--accent)'}],{pct:true,max:1,min:.7,target:.95}),'viagens no horário E sem ocorrência (avaria, documento, carga incompleta) ÷ viagens')}
-  ${repPanel('Tempo do caminhão no pátio (turnaround)','Referência de mercado: 30 a 60 min do gate in ao gate out',hbars(tf.map(([l,f],i)=>({l,v:D.ots.filter(o=>f(o.tat)).length,c:i<2?'var(--accent)':i===2?'var(--warn)':'var(--crit)'}))),'gate out − gate in do caminhão (motorista aguardando)')}</div>
-  ${repPanel('Desempenho por motorista','Ordenado do menor para o maior OTIF',tbl(['Motorista','Viagens','OTIF','Atraso médio quando atrasa','Duração média da viagem','Ocorrências'],mots.map(m=>[`<b>${H(m.m)}</b>`,m.n,chipS(stClass(m.otif,.95,'max'),fP(m.otif)),m.atr?nf(m.atr)+' min':'—',nf(m.dur)+' min',m.oc]),{r:[1,3,4,5]}))}
-  ${repPanel('Por tipo de ordem de transporte','',tbl(['Tipo','Viagens','OTIF','Duração média'],tipos.map(t=>[H(t.t),t.n,chipS(stClass(t.otif,.95,'max'),fP(t.otif)),nf(t.dur)+' min']),{r:[1,3]}))}`;
+  ${repPanel('Atraso no início das viagens','Diferença entre o horário agendado e o início real da OT',hbars(tf.map(([l,f],i)=>({l,v:D.ots.filter(o=>o.delay!=null&&f(o.delay)).length,c:i<1?'var(--accent)':i===1?'var(--warn)':'var(--crit)'}))),'hora em que a OT foi iniciada − hora agendada')}</div>
+  ${repPanel('Desempenho por motorista','Ordenado do menor para o maior OTIF',tbl(['Motorista','Viagens','OTIF','Atraso médio quando atrasa','Duração média da viagem','Ocorrências'],mots.map(m=>[`<b>${H(m.m)}</b>`,m.n,chipS(stClass(m.otif,.95,'max'),fP(m.otif)),m.atr?nf(m.atr)+' min':'—',m.dur!=null?nf(m.dur)+' min':'—',m.oc]),{r:[1,3,4,5]}))}
+  ${repPanel('Por tipo de ordem de transporte','',tbl(['Tipo','Viagens','OTIF','Duração média'],tipos.map(t=>[H(t.t),t.n,chipS(stClass(t.otif,.95,'max'),fP(t.otif)),t.dur!=null?nf(t.dur)+' min':'—']),{r:[1,3]}))}`;
 };
 RT.ovd=(D,K)=>{
   const W=weeks();const ovW=W.map(w=>D.ov.filter(x=>x.t>=w.b&&x.t<w.t).length),dsW=W.map(w=>D.ds.filter(x=>x.t>=w.b&&x.t<w.t).length);
@@ -1039,10 +1048,10 @@ RT.arm=(D,K)=>{
   const L=S.lotes.filter(l=>l.saldo>0);
   const ag=[['0–7 dias',x=>x<=7],['8–15 dias',x=>x>7&&x<=15],['16–30 dias',x=>x>15&&x<=30],['> 30 dias',x=>x>30]];
   const exc=L.map(l=>{const d=diasArm(l),e=d-l.freeTime,m3=l.m3*(l.saldo/l.volumes);return {l,d,e,m3,val:e>0?e*m3*rep.tarifa:0};}).filter(x=>x.e>0).sort((a,b)=>b.val-a.val);
-  return `<section class="kpis">${kpiTile('Ocupação média',fP(K.occ),'faixa ideal 70–85%')}${kpiTile('Pico no período',fP(Math.max(...D.occ.map(o=>o.p))),'maior ocupação diária de uma área')}${kpiTile('Acuracidade do inventário',fP(K.acc),'último inventário · meta ≥ 99%',stClass(K.acc,.99,'max')==='ok'?'':'warn')}${kpiTile('Lotes acima do free time',K.ft,'estoque atual',K.ft?'crit':'')}</section>
+  return `<section class="kpis">${kpiTile('Ocupação média',fP(K.occ),'faixa ideal 70–85%')}${kpiTile('Pico no período',D.occ.length?fP(Math.max(...D.occ.map(o=>o.p))):'—','maior ocupação diária de uma área')}${kpiTile('Acuracidade do inventário',fP(K.acc),'último inventário · meta ≥ 99%',stClass(K.acc,.99,'max')==='ok'?'':'warn')}${kpiTile('Lotes acima do free time',K.ft,'estoque atual',K.ft?'crit':'')}</section>
   ${repPanel('Ocupação semanal por área','% da capacidade em m³ · faixa verde = 70 a 85%',colChart(W.map(w=>w.l),oc.map((s,i)=>Object.assign(s,{color:cols[i]})),{pct:true,max:1,min:0,band:[.7,.85],wide:true}),'m³ ocupados ÷ capacidade da área (média dos dias da semana)')}
   <div class="grid2">${repPanel('Aging do estoque atual','Lotes por tempo de armazenagem',hbars(ag.map(([l,f],i)=>({l,v:L.filter(x=>f(diasArm(x))).length,c:i<2?'var(--accent)':i===2?'var(--warn)':'var(--crit)',x:'lotes · '+nf(L.filter(x=>f(diasArm(x))).reduce((s,x)=>s+x.m3*(x.saldo/x.volumes),0))+' m³'}))),'hoje − data de entrada do lote')}
-  ${repPanel('Acuracidade do inventário','Contagem cíclica mensal',tbl(['Data','Posições contadas','Acuracidade'],HIST.inv.map(i=>[fmtD(i.t),i.itens,chipS(stClass(i.acc/100,.99,'max'),fP(i.acc/100))]),{r:[1]}),'posições sem divergência ÷ posições contadas')}</div>
+  ${repPanel('Acuracidade do inventário','Contagem cíclica registrada pela equipe',`<div class="pbody" style="padding-bottom:0"><button class="btn sm pri" data-act="novoInv">+ Registrar inventário</button></div>`+tbl(['Data','Posições contadas','Acuracidade'],HIST.inv.map(i=>[fmtD(i.t),i.itens,chipS(stClass(i.acc/100,.99,'max'),fP(i.acc/100))]),{r:[1]}),'posições sem divergência ÷ posições contadas')}</div>
   ${repPanel('Armazenagem excedente a faturar','Lotes em estoque que passaram do free time',`<div class="pbody row small" style="padding-bottom:0"><label for="rtar">Tarifa de exemplo (R$ por m³ por dia excedente)</label><input id="rtar" type="number" step="0.1" value="${rep.tarifa}" style="max-width:110px"><span class="muted">Ajuste para a tabela comercial da Ziran</span></div>`+
     tbl(['Lote','Cliente','Descrição','Dias armazenados','Free time','Dias excedentes','m³ em estoque','Valor estimado'],exc.map(x=>[`<span class="mono">${x.l.id}</span>`,H(x.l.cliente),H(x.l.descricao),x.d,x.l.freeTime,`<b class="bad">${x.e}</b>`,nf(x.m3,1),'R$ '+nf(x.val,2)]),{r:[3,4,5,6,7]})+`<div class="pbody"><b>Total estimado: R$ ${nf(exc.reduce((s,x)=>s+x.val,0),2)}</b></div>`,'dias excedentes × m³ em estoque × tarifa')}`;
 };
@@ -1155,6 +1164,7 @@ if(window.__fbReady)fbBoot();
 else{showAuth('loading');window.addEventListener('fb-ready',fbBoot,{once:true});
   setTimeout(()=>{if(!window.__fbReady)showAuth('erro','Não foi possível carregar o Firebase. Confira a internet e recarregue a página (F5).');},20000);}
 $('#logout').addEventListener('click',()=>auth&&auth.signOut());
+$('#printView').addEventListener('click',()=>window.print());
 
 /* ============ USUÁRIOS (admin) ============ */
 let armedDel=false;
@@ -1170,7 +1180,7 @@ R.usuarios=()=>{
     <td class="num small">${fmtDT(u.ultimoAcesso)}</td><td class="num small">${fmtD(u.criado)}</td></tr>`;}).join('')||'<tr><td colspan="6" class="empty">Nenhum usuário.</td></tr>'}
   </tbody></table></div>
   <div class="formula"><b>Perfis:</b> Operador lança e avança as operações · Supervisor também importa planilhas e edita cadastros · Administrador também aprova usuários e gerencia os dados do sistema. Para bloquear alguém, mude a situação para <b>Inativo</b>.</div></section>
-  <section class="panel"><header><h2>Dados do sistema</h2></header><div class="pbody row">
+  <section class="panel"><header><h2>Dados do sistema</h2><button class="btn" data-act="backupXL">⬇ Baixar backup completo (Excel)</button></header><div class="pbody row">
   ${vazio?`<button class="btn" data-act="loadSample">Carregar dados de exemplo</button><span class="muted small">Útil para treinar a equipe antes de começar a operação real.</span>`:
    `<button class="btn danger" data-act="wipeAll">${armedDel?'Clique de novo para APAGAR TUDO':'Apagar todos os dados operacionais'}</button><span class="muted small">Remove bookings, contêineres, transportes, ovações/desovas, lotes e histórico. Usuários e cadastros continuam. Não tem como desfazer.</span>`}
   </div></section>`;
@@ -1185,6 +1195,52 @@ function novoUser(){form('Criar usuário',[{k:'nome',label:'Nome completo',req:t
 function loadSample(){const smp=sample();COLS.forEach(c=>S[c]=smp[c]);S.cad=smp.cad;S.seq=smp.seq;save();toast('Dados de exemplo carregados');}
 function wipeAll(){if(!armedDel){armedDel=true;render();setTimeout(()=>{armedDel=false;if(cur==='usuarios')render();},5000);return;}armedDel=false;COLS.forEach(c=>S[c]=[]);S.seq=EMPTY().seq;save();toast('Dados operacionais apagados');render();}
 
+/* ============ EXCEL E IMPRESSÃO ============ */
+const ptNum=s=>{let x=String(s).replace(/R\$\s?/,'').replace(/\s?(kg|h|min|m³|TEU|dias?)$/,'').trim();if(/^-?\d{1,3}(\.\d{3})*(,\d+)?%$|^-?\d+(,\d+)?%$/.test(x))return {v:Number(x.slice(0,-1).replace(/\./g,'').replace(',','.'))/100,z:'0.0%'};
+  if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$|^-?\d+(,\d+)?$/.test(x))return {v:Number(x.replace(/\./g,'').replace(',','.'))};return null;};
+function tableToSheet(tb){const rows=[...tb.rows].filter(r=>!r.querySelector('.empty'));const aoa=rows.map((r,ri)=>[...r.cells].map(c=>{const cl=c.cloneNode(true);cl.querySelectorAll('button').forEach(b=>b.remove());cl.querySelectorAll('select').forEach(s=>{const o=s.options[s.selectedIndex];s.replaceWith(document.createTextNode(o?o.text:''));});
+  cl.querySelectorAll('div,span,br').forEach(e=>e.insertAdjacentText('beforebegin',' '));const t=cl.textContent.replace(/\s+/g,' ').trim();if(ri===0)return t;if(c.classList.contains('mono')||c.querySelector('.mono')||/^\d{8,}$/.test(t))return t;const n=ptNum(t);return n?n:t;}));
+  const ws=XLSX.utils.aoa_to_sheet(aoa.map(r=>r.map(c=>c&&typeof c==='object'?c.v:c)));
+  aoa.forEach((r,ri)=>r.forEach((c,ci)=>{if(c&&typeof c==='object'&&c.z){const a=XLSX.utils.encode_cell({r:ri,c:ci});if(ws[a])ws[a].z=c.z;}}));
+  ws['!cols']=aoa[0].map((_,ci)=>({wch:Math.min(45,Math.max(8,...aoa.map(r=>String(r[ci]&&typeof r[ci]==='object'?r[ci].v:(r[ci]??'')).length+2)))}));return ws;}
+const slug=s=>norm(s).replace(/ /g,'-').slice(0,40)||'tabela';
+const hoje=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;};
+function downloadSheets(sheets,name){if(!window.XLSX){toast('Leitor de planilhas não carregou. Recarregue a página.');return;}const wb=XLSX.utils.book_new();sheets.forEach(([n,ws])=>XLSX.utils.book_append_sheet(wb,ws,String(n).slice(0,31).replace(/[\\/?*[\]:]/g,'-')));XLSX.writeFile(wb,name);toast('Arquivo '+name+' baixado');}
+function exportTable(tb,title){downloadSheets([[title||'Dados',tableToSheet(tb)]],`ziran_${slug(title)}_${hoje()}.xlsx`);}
+function decorateExports(root){(root||document).querySelectorAll('.panel').forEach(p=>{const tb=p.querySelector('table');const hd=p.querySelector(':scope>header');if(!tb||!hd||hd.querySelector('[data-xl]')||p.querySelector('[data-xlt]'))return;
+  const b=document.createElement('button');b.className='btn sm';b.type='button';b.dataset.xl='1';b.textContent='⬇ Excel';b.title='Baixar esta tabela em Excel';hd.appendChild(b);});}
+const flat=o=>{const r={};Object.entries(o).forEach(([k,v])=>{if(k==='_k')return;r[k]=v&&typeof v==='object'?JSON.stringify(v):v;});return r;};
+function xlOTs(){const L=S.ots.slice().sort((a,b)=>new Date(b.agenda)-new Date(a.agenda)).map(o=>{const b=bkById(o.bookingId);return {OT:o.id,Tipo:o.tipo,Status:o.status,'Contêiner':o.container||'',Booking:b?b.booking:'',Origem:o.origem,Destino:o.destino,Agendamento:fmtDT(o.agenda),'Início viagem':fmtDT(o.inicio),'Fim viagem':fmtDT(o.fim),Motorista:o.motorista||'',Cavalo:o.cavalo||'',Carreta:o.carreta||'','Ocorrência':o.ocorrencia||''};});
+  downloadSheets([['Ordens de transporte',XLSX.utils.json_to_sheet(L)]],`ziran_ordens-de-transporte_${hoje()}.xlsx`);}
+function backupXL(){const map={bookings:'Bookings',containers:'Contêineres',ots:'Transportes',ops:'Ovação e desova',lotes:'Armazenagem',log:'Histórico'};
+  const sh=Object.entries(map).map(([k,n])=>[n,XLSX.utils.json_to_sheet((S[k]||[]).map(flat))]);sh.push(['Usuários',XLSX.utils.json_to_sheet(usersList.map(flat))]);
+  downloadSheets(sh,`ziran_backup_${hoje()}.xlsx`);}
+/* impressão */
+function printDoc(html){const pa=$('#printArea');pa.innerHTML=`<div class="doc">${html}</div>`;document.body.classList.add('pdoc');
+  const done=()=>{document.body.classList.remove('pdoc');pa.innerHTML='';window.removeEventListener('afterprint',done);};window.addEventListener('afterprint',done);setTimeout(()=>window.print(),120);}
+const dF=(l,v,cls)=>`<div class="df ${cls||''}"><small>${H(l)}</small><b>${v==null||v===''?'&nbsp;':H(v)}</b></div>`;
+function docHead(title,num,sub){return `<div class="dhead"><img src="${$('.brand img').getAttribute('src')}" alt="Ziran"><div class="dt"><h1>${H(title)}</h1><div>${H(sub||'')}</div></div><div class="dn"><b>${H(num)}</b><span>Emitido ${fmtDT(iso(now()))}</span><span>${H(ME&&ME.nome||'')}</span></div></div>`;}
+const sigs=a=>`<div class="dsig">${a.map(x=>`<div><span></span>${H(x)}</div>`).join('')}</div>`;
+function printOT(id){const o=S.ots.find(x=>x.id===id);if(!o)return;const c=o.container&&cByNum(o.container),b=bkById(o.bookingId);
+  printDoc(docHead('Ordem de Transporte',o.id,o.tipo)+`<div class="dgrid">${dF('Agendamento',fmtDT(o.agenda))}${dF('Situação',o.status)}${dF('Contêiner',o.container||'—','mono')}${dF('Tipo',c?c.tipo:'')}${dF('Armador',c?c.armador:(b?b.armador:''))}${dF('Booking / BL',b?b.booking:(c&&c.bl)||'')}${dF('Navio / viagem',b?b.navio+' '+b.viagem:'')}${dF('Deadline de carga',b?fmtDT(b.deadlineCarga):'')}${dF('Lacre',c?c.lacre:'')}${dF('Peso bruto (VGM)',c&&c.vgm?nf(c.vgm)+' kg':'')}</div>
+  <div class="dgrid two">${dF('Origem',o.origem,'big')}${dF('Destino',o.destino,'big')}</div>
+  <div class="dgrid">${dF('Motorista',o.motorista)}${dF('Cavalo (placa)',o.cavalo)}${dF('Carreta (placa)',o.carreta)}</div>
+  <h3>Preencher na operação</h3><div class="dgrid">${dF('Hora de saída','')}${dF('Hora de chegada','')}${dF('Lacre conferido (sim/não)','')}${dF('Km inicial','')}${dF('Km final','')}${dF('Ocorrência','')}</div>
+  <div class="dbox"><small>Observações</small></div>`+sigs(['Motorista','Expedição Ziran','Recebedor (nome e carimbo)']));}
+function printOp(id){const o=S.ops.find(x=>x.id===id);if(!o)return;const c=cByNum(o.container),b=bkById(o.bookingId),l=loteById(o.loteId);
+  const rows=Array.from({length:12},(_,i)=>`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td></tr>`).join('');
+  printDoc(docHead('Ordem de '+o.tipo,o.id,o.cliente||'')+`<div class="dgrid">${dF('Contêiner',o.container,'mono')}${dF('Tipo',c?c.tipo:'')}${dF('Armador',c?c.armador:'')}${dF(o.tipo==='Ovação'?'Booking':'BL',b?b.booking:o.bl||'')}${dF('Navio / viagem',b?b.navio+' '+b.viagem:'')}${dF('Deadline de carga',b?fmtDT(b.deadlineCarga):'')}${dF('Programado',fmtDT(o.programado))}${dF('Conferente',o.conferente)}${dF('Carga / lote',l?l.id+' · '+l.descricao:'')}${dF('Volumes previstos',o.volumes!=null?nf(o.volumes):'')}${dF('Tara',c?nf(c.tara)+' kg':'')}${dF('Situação',o.status)}</div>
+  <h3>Preencher na operação</h3><div class="dgrid">${dF('Início (data e hora)','')}${dF('Fim (data e hora)','')}${dF('Volumes conferidos','')}${dF('Peso da carga (kg)','')}${dF('Lacre','')}${dF('Doca','')}</div>
+  <table class="dtab"><thead><tr><th style="width:36px">Nº</th><th>Descrição / marca</th><th style="width:80px">Quantidade</th><th style="width:90px">Peso</th><th>Observação</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="dchk">${['Contêiner limpo e seco','Sem furos ou avarias estruturais','Fotos antes, durante e depois','Carga amarrada / peada','Lacre aplicado e conferido','Etiquetas / marcações conferidas'].map(x=>`<span>☐ ${x}</span>`).join('')}</div>
+  <div class="dbox"><small>Avarias e observações</small></div>`+sigs(['Conferente','Supervisor','Cliente / motorista']));}
+function printBooking(id){const b=bkById(id);if(!b)return;const s=bookingState(b);
+  printDoc(docHead('Resumo do Booking',b.booking,b.exportador)+`<div class="dgrid">${dF('Armador',b.armador)}${dF('Navio / viagem',b.navio+' '+b.viagem)}${dF('Destino',b.destino)}${dF('Equipamento',b.qtd+' × '+b.tipo)}${dF('Deadline de draft',fmtDT(b.deadlineDraft))}${dF('Deadline de carga',fmtDT(b.deadlineCarga))}${dF('ETS',fmtDT(b.ets))}${dF('Terminal',b.terminal)}</div>
+  <div class="dchk">${[['draft','Draft enviado'],['vgm','VGM informado'],['due','DU-E registrada'],['nf','NF emitida']].map(([k,l])=>`<span>${b.check[k]?'☑':'☐'} ${l}</span>`).join('')}</div>
+  <table class="dtab"><thead><tr><th>Contêiner</th><th>Tipo</th><th>Status</th><th>Tara</th><th>Carga</th><th>VGM</th><th>Lacre</th><th>Posição</th></tr></thead><tbody>${s.cs.map(c=>`<tr><td class="mono">${H(c.num)}</td><td>${H(c.tipo)}</td><td>${H(c.status)}</td><td>${nf(c.tara)}</td><td>${nf(c.pesoCarga)}</td><td>${nf(c.vgm)}</td><td>${H(c.lacre||'')}</td><td>${H(c.posicao||'')}</td></tr>`).join('')}</tbody></table>
+  <p class="dnote">${s.entregue} de ${s.total} contêineres entregues no terminal.</p>`);}
+function concluirOT(id){const o=S.ots.find(x=>x.id===id);form('Concluir '+o.id,[{k:'ocorrencia',label:'Houve ocorrência na viagem?',type:'select',opts:['Nenhuma','Avaria','Atraso no terminal','Documentação','Carga incompleta','Acidente / sinistro','Outra']},{k:'obs',label:'Observação',type:'textarea',full:true}],v=>{o.ocorrencia=v.ocorrencia;if(v.obs)o.obs=v.obs;setTimeout(()=>moveOT(id,'Concluída'),0);},'Concluir entrega');}
+
 /* ============ eventos ============ */
 document.addEventListener('click',e=>{
   const t=e.target;
@@ -1193,7 +1249,12 @@ document.addEventListener('click',e=>{
   const cn=t.closest('[data-cnum]');if(cn&&!t.closest('button')){e.preventDefault();cDrawer(cn.dataset.cnum);return;}
   const bk=t.closest('[data-bk]');if(bk&&!t.closest('button,input')){e.preventDefault();bookingDrawer(bk.dataset.bk);return;}
   const ca=t.closest('[data-cact]');if(ca){cAction(ca.dataset.cact,ca.dataset.c);return;}
-  const ot=t.closest('[data-ot]');if(ot){moveOT(ot.dataset.ot,ot.dataset.to);return;}
+  const ot=t.closest('[data-ot]');if(ot){ot.dataset.to==='Concluída'?concluirOT(ot.dataset.ot):moveOT(ot.dataset.ot,ot.dataset.to);return;}
+  const pot=t.closest('[data-print-ot]');if(pot){printOT(pot.dataset.printOt);return;}
+  const pop=t.closest('[data-print-op]');if(pop){printOp(pop.dataset.printOp);return;}
+  const pbk=t.closest('[data-print-bk]');if(pbk){printBooking(pbk.dataset.printBk);return;}
+  const xl=t.closest('[data-xl]');if(xl){const p=xl.closest('.panel');const tb=p&&p.querySelector('table');if(tb)exportTable(tb,(p.querySelector('h2')||{}).innerText||$('#title').textContent);return;}
+  const xlt=t.closest('[data-xlt]');if(xlt){const tb=document.getElementById(xlt.dataset.xlt);const p=xlt.closest('.panel');if(tb)exportTable(tb,(p&&p.querySelector('h2')||{}).innerText||'Relatório');return;}
   const op=t.closest('[data-op]');if(op){op.dataset.opto==='start'?opStart(op.dataset.op):opEnd(op.dataset.op);return;}
   const tb=t.closest('[data-tabov]');if(tb){tabOv=tb.dataset.tabov;render();return;}
   const ta=t.closest('[data-tabarm]');if(ta){tabArm=ta.dataset.tabarm;render();return;}
@@ -1219,6 +1280,9 @@ document.addEventListener('click',e=>{
   else if(act==='novoUser')novoUser();
   else if(act==='loadSample')loadSample();
   else if(act==='wipeAll')wipeAll();
+  else if(act==='xlOTs')xlOTs();
+  else if(act==='backupXL')backupXL();
+  else if(act==='novoInv')novoInventario();
 });
 document.addEventListener('change',e=>{
   const t=e.target;
